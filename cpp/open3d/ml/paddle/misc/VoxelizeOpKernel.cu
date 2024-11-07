@@ -26,6 +26,7 @@ void VoxelizeCUDA(const paddle::Tensor& points,
                   paddle::Tensor& voxel_point_row_splits,
                   paddle::Tensor& voxel_batch_splits) {
     auto stream = points.stream();
+     // -1 means current global place
     auto cuda_device_props = phi::backends::gpu::GetDeviceProperties(-1);
     const int texture_alignment = cuda_device_props.textureAlignment;
 
