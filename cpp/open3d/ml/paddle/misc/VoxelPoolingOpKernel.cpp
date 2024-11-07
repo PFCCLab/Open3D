@@ -16,15 +16,15 @@ namespace {
 template <class TReal, class TFeat>
 class OutputAllocator {
 public:
-    OutputAllocator(paddle::Place device) : device(device) {}
+    OutputAllocator(paddle::Place place) : place(place) {}
 
     void AllocPooledPositions(TReal** ptr, size_t num) {
         if (num != 0) {
             positions = paddle::empty({int64_t(num), 3}, ToPaddleDtype<TReal>(),
-                                      device);
+                                      place);
         } else {
             positions = InitializedEmptyTensor(ToPaddleDtype<TReal>(), {0, 3},
-                                               device);
+                                               place);
         }
         *ptr = positions.data<TReal>();
     }
@@ -32,10 +32,10 @@ public:
     void AllocPooledFeatures(TFeat** ptr, size_t num, size_t channels) {
         if (num != 0) {
             features = paddle::empty({int64_t(num), int64_t(channels)},
-                                     ToPaddleDtype<TFeat>(), device);
+                                     ToPaddleDtype<TFeat>(), place);
         } else {
             features = InitializedEmptyTensor(ToPaddleDtype<TFeat>(),
-                                              {0, int64_t(channels)}, device);
+                                              {0, int64_t(channels)}, place);
         }
         *ptr = features.data<TFeat>();
     }
@@ -46,7 +46,7 @@ public:
 private:
     paddle::Tensor positions;
     paddle::Tensor features;
-    paddle::Place device;
+    paddle::Place place;
 };
 
 }  // namespace
