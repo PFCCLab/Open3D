@@ -7,14 +7,16 @@
 
 #pragma once
 
-#include <paddle/extension.h>
-#include <paddle/phi/backends/all_context.h>
-#include <paddle/phi/core/allocator.h>
+#include <paddle/phi/backends/stream.h>
+#include <paddle/phi/common/place.h>
 
 #include <sstream>
 #include <type_traits>
 
 #include "open3d/ml/ShapeChecking.h"
+#include "paddle/extension.h"
+#include "paddle/phi/backends/all_context.h"
+#include "paddle/phi/core/allocator.h"
 
 // Macros for checking tensor properties
 #define CHECK_CUDA(x)                                      \
@@ -99,9 +101,9 @@ inline bool ComparePaddleDtype(const TDtype& t) {
 // convenience function to check if all tensors have the same device type
 inline bool SameDeviceType(std::initializer_list<paddle::Tensor> tensors) {
     if (tensors.size()) {
-        auto device_type = tensors.begin()->place().GetDeviceType();
+        auto device_type = tensors.begin()->place();
         for (const auto& t : tensors) {
-            if (device_type != t.place().GetDeviceType()) {
+            if (device_type != t.place()) {
                 return false;
             }
         }
@@ -282,3 +284,10 @@ paddle::Tensor InitializedEmptyTensor(const phi::IntArray& shape,
 paddle::Tensor InitializedEmptyTensor(const phi::DataType dtype,
                                       const phi::IntArray& shape,
                                       const phi::Place& place);
+
+// return a array of [0 1 2 ... end-1]
+paddle::Tensor Arange(const int end, const paddle::Place& place);
+
+// just like tensor.transpose(dim0,dim1)
+// export FLAGS_use_stride_kernel=0
+paddle::Tensor Transpose(const paddle::Tensor& t, int64_t dim0, int64_t dim1);
