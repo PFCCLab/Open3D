@@ -289,5 +289,4 @@ paddle::Tensor InitializedEmptyTensor(const phi::DataType dtype,
 paddle::Tensor Arange(const int end, const paddle::Place& place);
 
 // just like tensor.transpose(dim0,dim1)
-// export FLAGS_use_stride_kernel=0
 paddle::Tensor Transpose(const paddle::Tensor& t, int64_t dim0, int64_t dim1);

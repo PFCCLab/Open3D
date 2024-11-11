@@ -193,7 +193,7 @@ std::vector<paddle::Tensor> ContinuousConvTransposeBackward(
                             neighbors_importance, inp_positions.shape()[0]);  \
         inp_features_backprop =                                               \
                 paddle::ones(inp_features.shape(), real_dtype, place);        \
-        auto filters_transposed = Transpose(filters, 3, 4);                   \
+        auto filters_transposed = Transpose(filters, 3, 4).contiguous();      \
                                                                               \
         ContinuousConv##fn_suffix<feat_t, out_t, real_t, index_t>(            \
                 filters_transposed, inp_positions, extents, offset,           \
