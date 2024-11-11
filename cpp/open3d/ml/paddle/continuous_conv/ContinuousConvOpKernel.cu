@@ -39,6 +39,7 @@ void ContinuousConvCUDA(const paddle::Tensor& filters,
     }
 
     auto stream = filters.stream();
+    // -1 means current global place
     auto cuda_device_props = phi::backends::gpu::GetDeviceProperties(-1);
     const int texture_alignment = cuda_device_props.textureAlignment;
 

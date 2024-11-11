@@ -101,9 +101,9 @@ inline bool ComparePaddleDtype(const TDtype& t) {
 // convenience function to check if all tensors have the same device type
 inline bool SameDeviceType(std::initializer_list<paddle::Tensor> tensors) {
     if (tensors.size()) {
-        auto device_type = tensors.begin()->place();
+        auto device_type = tensors.begin()->place().GetDeviceType();
         for (const auto& t : tensors) {
-            if (device_type != t.place()) {
+            if (device_type != t.place().GetDeviceType()) {
                 return false;
             }
         }

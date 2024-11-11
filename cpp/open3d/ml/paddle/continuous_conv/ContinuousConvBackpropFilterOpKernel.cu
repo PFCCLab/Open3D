@@ -40,6 +40,7 @@ void ContinuousConvBackpropFilterCUDA(
     }
 
     auto stream = filters.stream();
+    // -1 means current global place
     auto cuda_device_props = phi::backends::gpu::GetDeviceProperties(-1);
     const int texture_alignment = cuda_device_props.textureAlignment;
 
@@ -105,4 +106,4 @@ void ContinuousConvBackpropFilterCUDA(
             const open3d::ml::impl::InterpolationMode interpolation,      \
             const int64_t max_temp_mem_MB, paddle::Tensor& filter_backprop);
 
-INSTANTIATE(float, float, float, int32_t)
+INSTANTIATE(float, float, float, int32_t);
