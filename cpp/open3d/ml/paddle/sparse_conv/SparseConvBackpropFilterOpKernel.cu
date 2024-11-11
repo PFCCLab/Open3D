@@ -8,6 +8,7 @@
 
 #include <bits/stdint-intn.h>
 
+#include <sstream>
 #include <vector>
 
 #include "open3d/ml/impl/sparse_conv/SparseConvBackpropFilter.cuh"

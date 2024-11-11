@@ -6,6 +6,7 @@
 // ----------------------------------------------------------------------------
 //
 
+#include <sstream>
 #include <vector>
 
 #include "open3d/ml/impl/sparse_conv/SparseConvTranspose.cuh"
