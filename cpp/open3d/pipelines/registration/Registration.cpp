@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -235,13 +235,15 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
                                     max_correspondence_distance,
                                     transformation);
 
-                    // Update exit condition if necessary.
-                    // If confidence is 1.0, then it is safely inf, we always
-                    // consume all the iterations.
+                    // Update exit condition if necessary
                     double est_k_local_d =
                             std::log(1.0 - criteria.confidence_) /
                             std::log(1.0 -
                                      std::pow(corres_inlier_ratio, ransac_n));
+                    // This prevents having a negative number of iterations:
+                    // est_k_local_d = -inf if corres_inlier_ratio = 0.0
+                    est_k_local_d =
+                            est_k_local_d < 0 ? est_k_local : est_k_local_d;
                     est_k_local =
                             est_k_local_d < est_k_global
                                     ? static_cast<int>(std::ceil(est_k_local_d))
