@@ -11,6 +11,15 @@
 > 
 > It has verified on version v0.18.0 of Open3D. It is recommended to install **nightly-build(develop)** Paddle before running any code in this branch.
 
+## install
+
+```bash
+mkdir build
+cd build 
+cmake -DBUILD_PADDLE_OPS=ON -DBUILD_CUDA_MODULE=ON ..
+make install-pip-package -j4
+```
+
 <h4>
     <a href="https://www.open3d.org">Homepage</a> |
     <a href="https://www.open3d.org/docs">Docs</a> |
