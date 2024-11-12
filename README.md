@@ -11,13 +11,51 @@
 > 
 > It has verified on version v0.18.0 of Open3D. It is recommended to install **nightly-build(develop)** Paddle before running any code in this branch.
 
-## install
+## How to build
+
+make sure cmake and pip have already installed
+
+### Install dependencies
+
+```bash
+util/install_deps_ubuntu.sh
+pip install yapf==0.30.0
+```
+
+### Install nightly-build paddlepaddle-gpu
+
+```bash
+pip uninstall paddlepaddle-gpu
+python -m pip install --pre paddlepaddle-gpu -i https://www.paddlepaddle.org.cn/packages/nightly/cu118/
+```
+### Config
 
 ```bash
 mkdir build
-cd build 
-cmake -DBUILD_PADDLE_OPS=ON -DBUILD_CUDA_MODULE=ON ..
-make install-pip-package -j4
+cd build
+cmake  -DBUILD_CUDA_MODULE=ON \
+             -DBUILD_PADDLE_OPS=ON  \
+             -DGLIBCXX_USE_CXX11_ABI=ON \
+             -DBUNDLE_OPEN3D_ML=OFF \
+             ..
+```
+
+### Build
+
+```bash
+make -j8
+```
+
+### Install
+
+```bash
+make install-pip-package -j8
+```
+
+### Verify
+
+```
+python -c "import open3d.ml.paddle"
 ```
 
 <h4>
