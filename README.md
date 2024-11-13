@@ -52,12 +52,6 @@ make -j8
 make install-pip-package -j8
 ```
 
-### Verify
-
-```
-python -c "import open3d.ml.paddle"
-```
-
 <h4>
     <a href="https://www.open3d.org">Homepage</a> |
     <a href="https://www.open3d.org/docs">Docs</a> |
