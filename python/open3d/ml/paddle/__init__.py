@@ -23,8 +23,8 @@ _loaded = False
 try:
     from . import ops
     _loaded = True
-except Exception as ex:
-    raise ex
+except Exception as e:
+    raise e
 
 from . import layers
 from . import classes
