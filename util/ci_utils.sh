@@ -20,6 +20,7 @@ if [ -z "${BUILD_CUDA_MODULE:+x}" ]; then
 fi
 BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS:-ON}
 BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS:-ON}
+BUILD_PADDLE_OPS=${BUILD_PADDLE_OPS:-ON}
 LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
 
 # Dependency versions:
@@ -28,7 +29,7 @@ LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
 TENSORFLOW_VER="2.13.0"
 TORCH_VER="2.0.1"
 TORCH_CPU_GLNX_VER="${TORCH_VER}+cpu"
-TORCH_CUDA_GLNX_VER="${TORCH_VER}+cu117" # match CUDA_VERSION in docker/docker_build.sh
+TORCH_CUDA_GLNX_VER="${TORCH_VER}+cu118" # match CUDA_VERSION in docker/docker_build.sh
 TORCH_MACOS_VER="${TORCH_VER}"
 TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
 # Python
@@ -51,10 +52,14 @@ install_python_dependencies() {
         python -m pip install -U -r python/requirements_test.txt
     fi
     if [[ "with-cuda" =~ ^($options)$ ]]; then
+        PADDLE_WHEEL=paddlepaddle-gpu
+        PADDLE_WHEEL_PIP_INDEX=https://www.paddlepaddle.org.cn/packages/nightly/cu118/
         TF_ARCH_NAME=tensorflow
         TF_ARCH_DISABLE_NAME=tensorflow-cpu
         TORCH_GLNX="torch==$TORCH_CUDA_GLNX_VER"
     else
+        PADDLE_WHEEL=paddlepaddle
+        PADDLE_WHEEL_PIP_INDEX=https://www.paddlepaddle.org.cn/packages/nightly/cpu/
         TF_ARCH_NAME=tensorflow-cpu
         TF_ARCH_DISABLE_NAME=tensorflow
         TORCH_GLNX="torch==$TORCH_CPU_GLNX_VER"
@@ -83,7 +88,15 @@ install_python_dependencies() {
             exit 1
         fi
     fi
-    if [ "$BUILD_TENSORFLOW_OPS" == "ON" ] || [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
+    if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then # ML/requirements-torch.txt
+        if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            python -m pip install --pre $PADDLE_WHEEL -i $PADDLE_WHEEL_PIP_INDEX
+        else
+            echo "unknown OS $OSTYPE"
+            exit 1
+        fi
+    fi
+    if [ "$BUILD_TENSORFLOW_OPS" == "ON" ] || [ "$BUILD_PYTORCH_OPS" == "ON" ] || [ "$BUILD_PADDLE_OPS" == "ON" ]; then
         python -m pip install -U yapf=="$YAPF_VER"
         # Fix Protobuf compatibility issue
         # https://stackoverflow.com/a/72493690/1255535
@@ -116,6 +129,7 @@ build_all() {
         -DGLIBCXX_USE_CXX11_ABI=OFF
         -DBUILD_TENSORFLOW_OPS="$BUILD_TENSORFLOW_OPS"
         -DBUILD_PYTORCH_OPS="$BUILD_PYTORCH_OPS"
+        -DBUILD_PADDLE_OPS="$BUILD_ADDLE_OPS"
         -DCMAKE_INSTALL_PREFIX="$OPEN3D_INSTALL_DIR"
         -DBUILD_UNIT_TESTS=ON
         -DBUILD_BENCHMARKS=ON
@@ -173,6 +187,8 @@ build_pip_package() {
         CXX11_ABI=$(python -c "import tensorflow as tf; print('ON' if tf.__cxx11_abi_flag__ else 'OFF')")
     elif [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
         CXX11_ABI=$(python -c "import torch; print('ON' if torch._C._GLIBCXX_USE_CXX11_ABI else 'OFF')")
+    elif [ "$BUILD_PADDLE_OPS" == "ON" ]; then
+        CXX11_ABI="ON"
     fi
     echo Building with GLIBCXX_USE_CXX11_ABI="$CXX11_ABI"
     set -u
@@ -189,6 +205,7 @@ build_pip_package() {
         "-DGLIBCXX_USE_CXX11_ABI=$CXX11_ABI"
         "-DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS"
         "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS"
+        "-DBUILD_PADDLE_OPS=$BUILD_PADDLE_OPS"
         "-DBUILD_FILAMENT_FROM_SOURCE=$BUILD_FILAMENT_FROM_SOURCE"
         "-DBUILD_JUPYTER_EXTENSION=$BUILD_JUPYTER_EXTENSION"
         "-DCMAKE_INSTALL_PREFIX=$OPEN3D_INSTALL_DIR"
@@ -267,6 +284,10 @@ test_wheel() {
         python -c \
             "import open3d.ml.torch; print('PyTorch Ops library loaded:', open3d.ml.torch._loaded)"
     fi
+    if [ "$BUILD_PADDLE_OPS" == ON ]; then
+        python -c \
+            "import open3d.ml.paddle; print('Paddle Ops library loaded:', open3d.ml.paddle._loaded)"
+    fi
     if [ "$BUILD_TENSORFLOW_OPS" == ON ]; then
         # python -m pip install -r "$OPEN3D_ML_ROOT/requirements-tensorflow.txt"
         python -c \
@@ -288,7 +309,7 @@ run_python_tests() {
     python -m pip install -U -r python/requirements_test.txt
     echo Add --randomly-seed=SEED to the test command to reproduce test order.
     pytest_args=("$OPEN3D_SOURCE_ROOT"/python/test/)
-    if [ "$BUILD_PYTORCH_OPS" == "OFF" ] && [ "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
+    if [ "$BUILD_PYTORCH_OPS" == "OFF" ] && [ "$BUILD_TENSORFLOW_OPS" == "OFF" ] && [[ "$BUILD_PADDLE_OPS" == "OFF" ]]; then
         echo Testing ML Ops disabled
         pytest_args+=(--ignore "$OPEN3D_SOURCE_ROOT"/python/test/ml_ops/)
     fi
