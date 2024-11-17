@@ -88,8 +88,9 @@ install_python_dependencies() {
             exit 1
         fi
     fi
-    if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then # ML/requirements-torch.txt
+    if [ "$BUILD_PADDLE_OPS" == "ON" ]; then # ML/requirements-torch.txt
         if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            python -m pip uninstall paddlepaddle paddlepaddle-gpu -y
             python -m pip install --pre $PADDLE_GLNX -i $PADDLE_GLNX_PIP_INDEX
         else
             echo "unknown OS $OSTYPE"
@@ -223,7 +224,7 @@ build_pip_package() {
     make VERBOSE=1 -j"$NPROC" pip-package
     mv lib/python_package/pip_package/open3d*.whl . # save CPU wheel
 
-    if [ "$BUILD_CUDA_MODULE" == ON ]; then
+    if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
         echo
         echo Installing CUDA versions of TensorFlow and PyTorch...
         install_python_dependencies with-cuda purge-cache
