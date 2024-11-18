@@ -75,7 +75,6 @@ COPY . /root/Open3D
 WORKDIR /root/Open3D
 
 # Build python wheel
-ENV LD_LIBRARY_PATH=/usr/local/cuda/compat/:${LD_LIBRARY_PATH}
 RUN export NPROC=$(nproc) \
  && export BUILD_SHARED_LIBS=OFF \
  && source /root/Open3D/util/ci_utils.sh \

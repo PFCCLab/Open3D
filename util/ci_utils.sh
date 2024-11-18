@@ -225,6 +225,10 @@ build_pip_package() {
     mv lib/python_package/pip_package/open3d*.whl . # save CPU wheel
 
     if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
+        if [ "$BUILD_PADDLE_OPS" == "ON" ]; then
+            export LD_LIBRARY_PATH=/usr/local/cuda/compat/:${LD_LIBRARY_PATH}
+        fi
+        
         echo
         echo Installing CUDA versions of TensorFlow and PyTorch...
         install_python_dependencies with-cuda purge-cache
@@ -262,7 +266,7 @@ test_wheel() {
     echo -n "Using pip: "
     python -m pip --version
     echo "Installing Open3D wheel $wheel_path in virtual environment..."
-    python -m pip install "$wheel_path"
+    python -m pip install "$wheel_path" --force
     python -c "import open3d; print('Installed:', open3d); print('BUILD_CUDA_MODULE: ', open3d._build_config['BUILD_CUDA_MODULE'])"
     python -c "import open3d; print('CUDA available: ', open3d.core.cuda.is_available())"
     echo

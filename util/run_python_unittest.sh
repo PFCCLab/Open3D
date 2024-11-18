@@ -16,9 +16,6 @@ echo "Running Open3D CPU Python tests..."
 run_python_tests
 echo
 
-echo "Test uninstalling Open3D..."
-make uninstall
-
 if nvidia-smi >/dev/null 2>&1; then
     # Run on GPU versions
     echo "Try importing Open3D GPU Python package"
@@ -27,7 +24,4 @@ if nvidia-smi >/dev/null 2>&1; then
     echo "Running Open3D GPU Python tests..."
     run_python_tests
     echo
-
-    echo "Test uninstalling Open3D..."
-    make uninstall
 fi
