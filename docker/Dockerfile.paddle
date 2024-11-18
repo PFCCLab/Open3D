@@ -39,6 +39,12 @@ RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
  && cp -ar ${CMAKE_VERSION} ${HOME}
 ENV PATH=${HOME}/${CMAKE_VERSION}/bin:${PATH}
 
+# Dependencies: gcc
+RUN rm /usr/bin/gcc && rm /usr/bin/g++ \
+ && mv /usr/bin/gcc.bak /usr/bin/gcc \
+ && mv /usr/bin/g++.bak /usr/bin/g++
+ENV PATH=/usr/bin:${PATH}
+
 # Miniconda
 ENV PATH="/root/miniconda3/bin:${PATH}"
 RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
@@ -68,7 +74,8 @@ RUN source /root/Open3D/util/ci_utils.sh \
 COPY . /root/Open3D
 WORKDIR /root/Open3D
 
-# # Build python wheel
+# Build python wheel
+ENV LD_LIBRARY_PATH=/usr/local/cuda/compat/:${LD_LIBRARY_PATH}
 RUN export NPROC=$(nproc) \
  && export BUILD_SHARED_LIBS=OFF \
  && source /root/Open3D/util/ci_utils.sh \

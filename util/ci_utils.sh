@@ -314,6 +314,13 @@ run_python_tests() {
         echo Testing ML Ops disabled
         pytest_args+=(--ignore "$OPEN3D_SOURCE_ROOT"/python/test/ml_ops/)
     fi
+
+    if [ "$BUILD_PADDLE_OPS" == "OFF" ]; then
+        pytest_args+=(--ignore "$OPEN3D_SOURCE_ROOT"/python/test/ml_ops/test_ragged_tensor_paddle.py)
+    elif [ "$BUILD_PYTORCH_OPS" == "OFF" ]; then
+        pytest_args+=(--ignore "$OPEN3D_SOURCE_ROOT"/python/test/ml_ops/test_ragged_tensor.py)
+    fi
+    
     python -m pytest "${pytest_args[@]}"
     deactivate open3d_test.venv # argument prevents unbound variable error
     rm -rf open3d_test.venv     # cleanup for testing the next wheel
