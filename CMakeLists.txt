@@ -414,9 +414,9 @@ if(BUILD_CUDA_MODULE)
 
     message(STATUS "Using CUDA architectures: ${CMAKE_CUDA_ARCHITECTURES}")
     enable_language(CUDA)
-
-    if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA" AND CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.1")
-        message(FATAL_ERROR "CUDA 10.0 and older are not supported. Please upgrade to CUDA 10.1 or newer.")
+    set(CMAKE_CUDA_STANDARD 17)
+    if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA" AND CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "11.5")
+        message(FATAL_ERROR "CUDA 11.4 and older are not supported. Please upgrade to CUDA 11.5 or newer.")
     endif()
 endif ()
 
