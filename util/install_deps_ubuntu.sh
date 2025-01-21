@@ -53,5 +53,7 @@ if [ "$(uname -m)" == "aarch64" ]; then
 fi
 
 echo "apt-get install ${deps[*]}"
-$SUDO apt-get update
-$SUDO apt-get install ${APT_CONFIRM} ${deps[*]}
+# $SUDO apt-get update
+# $SUDO apt-get install ${APT_CONFIRM} ${deps[*]}
+apt-get update
+apt-get install ${APT_CONFIRM} ${deps[*]}
