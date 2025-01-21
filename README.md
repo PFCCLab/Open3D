@@ -8,7 +8,7 @@
 
 > [!IMPORTANT]
 > This branch(paddle) experimentally integrates [Paddle backend](https://www.paddlepaddle.org.cn/en/install/quick?docurl=/documentation/docs/en/develop/install/pip/linux-pip_en.html) to Open3D meachine learning module.
-> 
+>
 > It was developed base version v0.18.0 of Open3D. It is recommended to install **nightly-build(develop)** Paddle before running any code in this branch.
 >
 > It was verified on Ubuntu 20.04. It may meet some problems if you are using other environment.
@@ -16,13 +16,25 @@
 ## **Build and Install**
 
 ```bash
+# replace gcc, g++ with 9.4.0 version(important, or you may meet some problems when make install-pip-package)
+rm /usr/bin/gcc /usr/bin/g++
+mv /usr/bin/gcc.bak /usr/bin/gcc
+mv /usr/bin/g++.bak /usr/bin/g++
+
 # install dependencies
-util/install_deps_ubuntu.sh
-pip install yapf==0.30.0
+cd Open3D
+bash util/install_deps_ubuntu.sh
+pip install wheel yapf==0.30.0
+
+# install cmake 3.23(optional, if you have installed cmake 3.23 or higher version, please skip this step)
+wget -nc https://paddle-org.bj.bcebos.com/paddlescience/cmake-3.23.0-linux-x86_64.tar.gz
+tar -zxvf cmake-3.23.0-linux-x86_64.tar.gz
+rm -f cmake-3.23.0-linux-x86_64.tar.gz
+PATH=$PWD/cmake-3.23.0-linux-x86_64/bin:$PATH
 
 # install nightly-build paddlepaddle-gpu
 pip uninstall paddlepaddle-gpu
-python -m pip install --pre paddlepaddle-gpu -i https://www.paddlepaddle.org.cn/packages/nightly/cu118/
+pip install --pre paddlepaddle-gpu -i https://www.paddlepaddle.org.cn/packages/nightly/cu118/
 
 # configure
 mkdir build
@@ -35,19 +47,17 @@ cmake  -DBUILD_CUDA_MODULE=ON \
 
 # install
 make install-pip-package -j8
-
 ```
 
 Open3D for paddle backend also provide [Dockerfile](docker/Dockerfile.paddle) to help build from docker. More details please refer to the [document](docker/README.md).
 
 ## **Unit Test**
 
-Please make sure you have installed Open3D for paddle backend correctly before running unit tests 
+Please make sure you have installed Open3D for paddle backend correctly before running unit tests
 
 ```bash
 util/run_python_unittest.sh
 ```
- 
 
 # Below is Open3D's original README
 
@@ -77,15 +87,15 @@ the open-source community.
 
 **Core features of Open3D include:**
 
--   3D data structures
--   3D data processing algorithms
--   Scene reconstruction
--   Surface alignment
--   3D visualization
--   Physically based rendering (PBR)
--   3D machine learning support with PyTorch and TensorFlow
--   GPU acceleration for core 3D operations
--   Available in C++ and Python
+- 3D data structures
+- 3D data processing algorithms
+- Scene reconstruction
+- Surface alignment
+- 3D visualization
+- Physically based rendering (PBR)
+- 3D machine learning support with PyTorch and TensorFlow
+- GPU acceleration for core 3D operations
+- Available in C++ and Python
 
 Here's a brief overview of the different components of Open3D and how they fit
 together to enable full end to end pipelines:
@@ -126,14 +136,14 @@ To compile Open3D from source, refer to
 
 Checkout the following links to get started with Open3D C++ API
 
--   Download Open3D binary package: [Release](https://github.com/isl-org/Open3D/releases) or [latest development version](https://www.open3d.org/docs/latest/getting_started.html#c)
--   [Compiling Open3D from source](https://www.open3d.org/docs/release/compilation.html)
--   [Open3D C++ API](https://www.open3d.org/docs/release/cpp_api.html)
+- Download Open3D binary package: [Release](https://github.com/isl-org/Open3D/releases) or [latest development version](https://www.open3d.org/docs/latest/getting_started.html#c)
+- [Compiling Open3D from source](https://www.open3d.org/docs/release/compilation.html)
+- [Open3D C++ API](https://www.open3d.org/docs/release/cpp_api.html)
 
 To use Open3D in your C++ project, checkout the following examples
 
--   [Find Pre-Installed Open3D Package in CMake](https://github.com/isl-org/open3d-cmake-find-package)
--   [Use Open3D as a CMake External Project](https://github.com/isl-org/open3d-cmake-external-project)
+- [Find Pre-Installed Open3D Package in CMake](https://github.com/isl-org/open3d-cmake-find-package)
+- [Use Open3D as a CMake External Project](https://github.com/isl-org/open3d-cmake-external-project)
 
 ## Open3D-Viewer app
 
@@ -154,10 +164,10 @@ top of the Open3D core library and extends it with machine learning tools for
 
 ## Communication channels
 
--   [GitHub Issue](https://github.com/isl-org/Open3D/issues): bug reports,
+- [GitHub Issue](https://github.com/isl-org/Open3D/issues): bug reports,
     feature requests, etc.
--   [Forum](https://github.com/isl-org/Open3D/discussions): discussion on the usage of Open3D.
--   [Discord Chat](https://discord.gg/D35BGvn): online chats, discussions,
+- [Forum](https://github.com/isl-org/Open3D/discussions): discussion on the usage of Open3D.
+- [Discord Chat](https://discord.gg/D35BGvn): online chats, discussions,
     and collaboration with other users and developers.
 
 ## Citation
