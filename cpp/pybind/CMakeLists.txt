@@ -66,7 +66,11 @@ elseif (UNIX)   # Linux
 };]=])
     target_link_options(pybind PRIVATE $<$<CONFIG:Release>:
         "-Wl,--version-script=${CMAKE_CURRENT_BINARY_DIR}/pybind.map" >)
-    target_link_options(pybind PRIVATE "-flto=auto")
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 9)
+        target_link_options(pybind PRIVATE "-flto=auto")
+    else()
+        target_link_options(pybind PRIVATE)
+    endif()
 endif()
 
 
