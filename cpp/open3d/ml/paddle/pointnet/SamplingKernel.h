@@ -32,6 +32,7 @@
 //***************************************************************************************/
 
 #pragma once
+#include "stdint.h"
 
 void furthest_point_sampling_launcher(int b,
                                       int n,

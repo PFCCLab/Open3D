@@ -32,6 +32,7 @@
 //***************************************************************************************/
 
 #pragma once
+#include "stdint.h"
 
 void three_nn_launcher(int b,
                        int n,
