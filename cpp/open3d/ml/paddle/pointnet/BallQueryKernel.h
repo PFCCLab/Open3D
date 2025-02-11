@@ -32,6 +32,7 @@
 //***************************************************************************************/
 
 #pragma once
+#include "stdint.h"
 
 void ball_query_launcher(int b,
                          int n,
