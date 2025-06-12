@@ -51,13 +51,13 @@ std::vector<paddle::Tensor> VoxelPoolingForward(
                  "'nearest_neighbor', 'center') but got " +
                          position_fn_str);
     }
-    AccumulationFn feature_fn = AVERAGE;
+    AccumulationFn feature_fn = AccumulationFn::AVERAGE;
     if (feature_fn_str == "average") {
-        feature_fn = AVERAGE;
+        feature_fn = AccumulationFn::AVERAGE;
     } else if (feature_fn_str == "nearest_neighbor") {
-        feature_fn = NEAREST_NEIGHBOR;
+        feature_fn = AccumulationFn::NEAREST_NEIGHBOR;
     } else if (feature_fn_str == "max") {
-        feature_fn = MAX;
+        feature_fn = AccumulationFn::MAX;
     } else {
         PD_CHECK(false,
                  "feature_fn must be one of ('average', "
@@ -125,24 +125,24 @@ std::vector<paddle::Tensor> VoxelPoolingBackward(
         const std::string& feature_fn_str) {
     AccumulationFn position_fn = AVERAGE;
     if (position_fn_str == "average") {
-        position_fn = AVERAGE;
+        position_fn = AccumulationFn::AVERAGE;
     } else if (position_fn_str == "nearest_neighbor") {
-        position_fn = NEAREST_NEIGHBOR;
+        position_fn = AccumulationFn::NEAREST_NEIGHBOR;
     } else if (position_fn_str == "center") {
-        position_fn = CENTER;
+        position_fn = AccumulationFn::CENTER;
     } else {
         PD_CHECK(false,
                  "position_fn must be one of ('average', "
                  "'nearest_neighbor', 'center') but got " +
                          position_fn_str);
     }
-    AccumulationFn feature_fn = AVERAGE;
+    AccumulationFn feature_fn = AccumulationFn::AVERAGE;
     if (feature_fn_str == "average") {
-        feature_fn = AVERAGE;
+        feature_fn = AccumulationFn::AVERAGE;
     } else if (feature_fn_str == "nearest_neighbor") {
-        feature_fn = NEAREST_NEIGHBOR;
+        feature_fn = AccumulationFn::NEAREST_NEIGHBOR;
     } else if (feature_fn_str == "max") {
-        feature_fn = MAX;
+        feature_fn = AccumulationFn::MAX;
     } else {
         PD_CHECK(false,
                  "feature_fn must be one of ('average', "
