@@ -39,7 +39,15 @@ pip install --pre paddlepaddle-gpu -i https://www.paddlepaddle.org.cn/packages/n
 # configure
 mkdir build
 cd build
+# Build on develop
 cmake  -DBUILD_CUDA_MODULE=ON \
+       -DBUILD_PADDLE_OPS=ON  \
+       -DGLIBCXX_USE_CXX11_ABI=ON \
+       -DBUNDLE_OPEN3D_ML=OFF \
+       ..
+# Build on release (support CUDA archs: Pascal, Volta, Turing and Ampere.)
+cmake  -DBUILD_CUDA_MODULE=ON \
+       -DBUILD_COMMON_CUDA_ARCHS=ON \
        -DBUILD_PADDLE_OPS=ON  \
        -DGLIBCXX_USE_CXX11_ABI=ON \
        -DBUNDLE_OPEN3D_ML=OFF \
