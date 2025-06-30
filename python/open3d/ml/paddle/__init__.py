@@ -7,6 +7,7 @@
 from packaging.version import parse as _verp
 import paddle as _paddle
 from open3d import _build_config
+import warnings
 
 if not _build_config["Paddle_VERSION"]:
     raise Exception('Open3D was not built with Paddle support!')
@@ -15,9 +16,10 @@ _o3d_paddle_version = _verp(_build_config["Paddle_VERSION"])
 if _verp(_paddle.__version__).release[:2] != _o3d_paddle_version.release[:2]:
     match_paddle_ver = '.'.join(
         str(v) for v in _o3d_paddle_version.release[:2] + ('*',))
-    raise Exception('Version mismatch: Open3D needs Paddle version {}, but '
-                    'version {} is installed!'.format(match_paddle_ver,
-                                                      _paddle.__version__))
+    warnings.warn(
+        f"Version mismatch: Open3D needs Paddle version {match_paddle_ver}, but "
+        f"version {_paddle.__version__} is installed",
+        category=UserWarning)
 
 _loaded = False
 try:
