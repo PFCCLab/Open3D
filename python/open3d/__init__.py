@@ -63,7 +63,7 @@ if _build_config["BUILD_CUDA_MODULE"]:
         warnings.warn(
             "Open3D was built with CUDA support, but Open3D CPU Python "
             "bindings were not found. Open3D will not work on systems without"
-            " CUDA devices.", ImportWarning)
+            " CUDA devices.", UserWarning)
     try:
         # Check CUDA availability without importing CUDA pybind symbols to
         # prevent "symbol already registered" errors if first import fails.
@@ -78,16 +78,16 @@ if _build_config["BUILD_CUDA_MODULE"]:
             warnings.warn(
                 "Open3D was built with CUDA support, but no suitable CUDA "
                 "devices found. If your system has CUDA devices, check your "
-                "CUDA drivers and runtime.", ImportWarning)
+                "CUDA drivers and runtime.", UserWarning)
     except OSError as os_error:
         warnings.warn(
             f'Open3D was built with CUDA support, but an error ocurred while loading the Open3D CUDA Python bindings. This is usually because the CUDA libraries could not be found. Check your CUDA installation. Falling back to the CPU pybind library. Reported error: {os_error}.',
-            ImportWarning)
+            UserWarning)
     except StopIteration:
         warnings.warn(
             "Open3D was built with CUDA support, but Open3D CUDA Python "
             "binding library not found! Falling back to the CPU Python "
-            "binding library.", ImportWarning)
+            "binding library.", UserWarning)
 
 if __DEVICE_API__ == "cpu":
     from open3d.cpu.pybind import (core, camera, data, geometry, io, pipelines,
@@ -112,7 +112,7 @@ def _insert_pybind_names(skip_names=()):
 import open3d.visualization
 _insert_pybind_names(skip_names=("ml",))
 
-__version__ = "@PROJECT_VERSION@"
+__version__ = "0.18.0+7f9ae91e"
 
 if int(sys.version_info[0]) < 3:
     raise Exception("Open3D only supports Python 3.")
