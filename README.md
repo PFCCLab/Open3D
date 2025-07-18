@@ -13,6 +13,9 @@
 >
 > It was verified on Ubuntu 20.04. It may meet some problems if you are using other environment.
 
+> [!WARNING]
+> If you encounter the error `No module named open3d.cpu`, it may be due to an outdated version of `libgcc` in your current runtime environment. If you're using a Conda-based Python environment, you can try resolving the issue by running the following command: `conda install -n your_python_env_name -c conda-forge libgcc-ng=12.2.0 libstdcxx-ng=12.2.0`
+
 ## **Build and Install**
 
 ```bash
@@ -39,12 +42,14 @@ pip install --pre paddlepaddle-gpu -i https://www.paddlepaddle.org.cn/packages/n
 # configure
 mkdir build
 cd build
+
 # Build on develop
 cmake  -DBUILD_CUDA_MODULE=ON \
        -DBUILD_PADDLE_OPS=ON  \
        -DGLIBCXX_USE_CXX11_ABI=ON \
        -DBUNDLE_OPEN3D_ML=OFF \
        ..
+
 # Build on release (support CUDA archs: Pascal, Volta, Turing and Ampere.)
 cmake  -DBUILD_CUDA_MODULE=ON \
        -DBUILD_COMMON_CUDA_ARCHS=ON \
@@ -53,8 +58,9 @@ cmake  -DBUILD_CUDA_MODULE=ON \
        -DBUNDLE_OPEN3D_ML=OFF \
        ..
 
-# install
+# install whl
 make install-pip-package -j8
+pip install ./lib/python_package/pip_package/open3d-*.whl
 ```
 
 Open3D for paddle backend also provide [Dockerfile](docker/Dockerfile.paddle) to help build from docker. More details please refer to the [document](docker/README.md).
