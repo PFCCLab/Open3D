@@ -47,7 +47,7 @@ try:
     if tf_gpu_devices and o3d._build_config['BUILD_CUDA_MODULE']:
         _ml_modules['tf_gpu'] = MLModules(tf, ml3d_ops, ml3d_layers, None,
                                           'GPU:0', 'CPU:0', True)
-except ImportError:
+except Exception:
     pass
 
 try:
@@ -60,7 +60,7 @@ try:
     if torch.cuda.is_available() and o3d._build_config['BUILD_CUDA_MODULE']:
         _ml_modules['torch_cuda'] = MLModules(torch, ml3d_ops, ml3d_layers,
                                               ml3d_classes, 'cuda', 'cpu', True)
-except ImportError:
+except Exception:
     pass
 
 try:
@@ -75,7 +75,7 @@ try:
         _ml_modules['paddle_cuda'] = MLModules(paddle, ml3d_ops, ml3d_layers,
                                                ml3d_classes, 'cuda', 'cpu',
                                                True)
-except ImportError:
+except Exception:
     pass
 
 
