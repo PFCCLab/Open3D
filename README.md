@@ -14,7 +14,9 @@
 > It was verified on Ubuntu 20.04. It may meet some problems if you are using other environment.
 
 > [!WARNING]
-> If you encounter the error `No module named open3d.cpu`, it may be due to an outdated version of `libgcc` in your current runtime environment. If you're using a Conda-based Python environment, you can try resolving the issue by running the following command: `conda install -n your_python_env_name -c conda-forge libgcc-ng=12.2.0 libstdcxx-ng=12.2.0`
+> If you encounter the error `No module named open3d.cpu`, it may be due to an outdated version of `libgcc` in your current runtime environment. If you're using a Conda-based Python environment, you can try resolving the issue by running the following command: `apt-get install libgl1-mesa-glx -y` and `conda install -n your_python_env_name -c conda-forge libgcc-ng=12.2.0 libstdcxx-ng=12.2.0`
+>
+> If the error persists, **please carefully check the warning or error messages printed in the console**, and search for the exact message using a search engine or consult a large language model to find the corresponding solution.
 
 ## **Build and Install**
 
