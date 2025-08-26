@@ -32,7 +32,6 @@ std::vector<paddle::Tensor> InvertNeighborsListCUDA(
 
     int num_attributes;
     if (inp_neighbors_attributes.shape()[0] == 0) {
-        std::cout << inp_neighbors_attributes.dtype() << std::endl;
         num_attributes = 0;
         neighbors_attributes =
                 InitializedEmptyTensor(inp_neighbors_attributes.dtype(),
