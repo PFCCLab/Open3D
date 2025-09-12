@@ -58,7 +58,7 @@ std::vector<paddle::Tensor> Voxelize(paddle::Tensor& points,
                 voxel_batch_splits};                                           \
     }
 
-    if (points.is_gpu()) {
+    if (points.is_gpu() || points.is_custom_device()) {
 #ifdef BUILD_CUDA_MODULE
         // pass to cuda function
         CALL(float, VoxelizeCUDA)

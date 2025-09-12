@@ -92,7 +92,7 @@ std::vector<paddle::Tensor> VoxelPoolingForward(
     }
 
     CHECK_SAME_DEVICE_TYPE(positions, features);
-    if (positions.is_gpu()) {
+    if (positions.is_gpu() || positions.is_custom_device()) {
         PD_CHECK(false, "VoxelPooling does not support CUDA");
     } else {
         CALL(float, float, VoxelPoolingCPU)
@@ -170,7 +170,7 @@ std::vector<paddle::Tensor> VoxelPoolingBackward(
     }
 
     CHECK_SAME_DEVICE_TYPE(positions, features);
-    if (positions.is_gpu()) {
+    if (positions.is_gpu() || positions.is_custom_device()) {
         PD_CHECK(false, "VoxelPooling backward does not support CUDA");
     } else {
         CALL(float, float, VoxelPoolingGradCPU)

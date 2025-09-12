@@ -19,9 +19,10 @@
 #include "paddle/phi/core/allocator.h"
 
 // Macros for checking tensor properties
-#define CHECK_CUDA(x)                                      \
-    do {                                                   \
-        PD_CHECK(x.is_gpu(), #x " must be a CUDA tensor"); \
+#define CHECK_CUDA(x)                                \
+    do {                                             \
+        PD_CHECK(x.is_gpu() || x.is_custom_device(), \
+                 #x " must be a CUDA tensor");       \
     } while (0)
 
 // NOTE: The input Tensor will be preprocessed into a contiguous Tensor within

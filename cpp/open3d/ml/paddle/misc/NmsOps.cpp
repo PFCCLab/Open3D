@@ -18,7 +18,7 @@ std::vector<paddle::Tensor> Nms(paddle::Tensor& boxes,
     CHECK_TYPE(scores, phi::DataType::FLOAT32);
 
     std::vector<int64_t> keep_indices_blob;
-    if (boxes.is_gpu()) {
+    if (boxes.is_gpu() || boxes.is_custom_device()) {
 #ifdef BUILD_CUDA_MODULE
         keep_indices_blob = open3d::ml::contrib::NmsCUDAKernel(
                 boxes.data<float>(), scores.data<float>(), boxes.shape()[0],

@@ -110,7 +110,7 @@ std::vector<paddle::Tensor> ContinuousConvTransposeForward(
         return {out_features};                             \
     }
 
-    if (inp_features.is_gpu()) {
+    if (inp_features.is_gpu() || inp_features.is_custom_device()) {
 #ifdef BUILD_CUDA_MODULE
         CALL(float, float, float, int32_t, ::ContinuousConvTransposeCUDA)
 #else
@@ -206,7 +206,7 @@ std::vector<paddle::Tensor> ContinuousConvTransposeBackward(
     }
 
     bool dispatch_success = false;
-    if (inp_features.is_gpu()) {
+    if (inp_features.is_gpu() || inp_features.is_custom_device()) {
 #ifdef BUILD_CUDA_MODULE
         CALL(float, float, float, int32_t, CUDA)
 #else

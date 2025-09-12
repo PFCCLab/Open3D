@@ -46,7 +46,8 @@ std::vector<paddle::Tensor> InvertNeighborsList(
 
     CHECK_SAME_DEVICE_TYPE(inp_neighbors_index, inp_neighbors_row_splits,
                            inp_neighbors_attributes);
-    if (inp_neighbors_index.is_gpu()) {
+    if (inp_neighbors_index.is_gpu() ||
+        inp_neighbors_index.is_custom_device()) {
 #ifdef BUILD_CUDA_MODULE
         // pass to cuda function
         CALL(int32_t, uint8_t, InvertNeighborsListCUDA)

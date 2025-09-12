@@ -33,7 +33,7 @@ std::vector<paddle::Tensor> ReduceSubarraysSum(paddle::Tensor& values,
 
     CHECK_SAME_DEVICE_TYPE(values, row_splits);
 
-    if (values.is_gpu()) {
+    if (values.is_gpu() || values.is_custom_device()) {
 #ifdef BUILD_CUDA_MODULE
         // pass to cuda function
         CALL(int32_t, ReduceSubarraysSumCUDA)

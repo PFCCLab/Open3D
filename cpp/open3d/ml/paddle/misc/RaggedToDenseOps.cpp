@@ -59,7 +59,7 @@ std::vector<paddle::Tensor> RaggedToDense(paddle::Tensor& values,
         return {fn<value_t>(values, row_splits, out_col_size, default_value)}; \
     }
 
-    if (values.is_gpu()) {
+    if (values.is_gpu() || values.is_custom_device()) {
 #ifdef BUILD_CUDA_MODULE
         // pass to cuda function
         CALL(uint8_t, RaggedToDenseCUDA)

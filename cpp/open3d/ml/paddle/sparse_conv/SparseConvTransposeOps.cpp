@@ -87,7 +87,7 @@ std::vector<paddle::Tensor> SparseConvTransposeForward(
         return {out_features};                                     \
     }
 
-    if (inp_features.is_gpu()) {
+    if (inp_features.is_gpu() || inp_features.is_custom_device()) {
 #ifdef BUILD_CUDA_MODULE
         CALL(float, float, int32_t, uint8_t, ::SparseConvTransposeCUDA)
 #else
@@ -176,7 +176,7 @@ std::vector<paddle::Tensor> SparseConvTransposeBackward(
     }
 
     bool dispatch_success = false;
-    if (inp_features.is_gpu()) {
+    if (inp_features.is_gpu() || inp_features.is_custom_device()) {
 #ifdef BUILD_CUDA_MODULE
         CALL(float, float, int32_t, uint8_t, CUDA)
 #else

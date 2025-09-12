@@ -85,7 +85,7 @@ std::vector<paddle::Tensor> MultiRadiusSearch(
             ignore_query_point, return_distances, normalize_distances,     \
             neighbors_index, neighbors_row_splits, neighbors_distance
 
-    if (points.is_gpu()) {
+    if (points.is_gpu() || points.is_custom_device()) {
         PD_CHECK(false, "MultiRadiusSearch does not support CUDA");
     } else {
         if (ComparePaddleDtype<float>(point_type)) {
