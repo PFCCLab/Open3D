@@ -54,6 +54,12 @@ if(NOT Paddle_FOUND)
     set(PADDLE_INCLUDE_DIRS)
     list(APPEND PADDLE_INCLUDE_DIRS "${Paddle_ROOT}/include")
     list(APPEND PADDLE_INCLUDE_DIRS "${Paddle_ROOT}/include/third_party")
+    if(EXISTS "${Paddle_ROOT}/include/paddle/phi/api/include/compat")
+        list(APPEND PADDLE_INCLUDE_DIRS "${Paddle_ROOT}/include/paddle/phi/api/include/compat")
+    endif()
+    if(EXISTS "${Paddle_ROOT}/include/paddle/phi/api/include/compat/torch/csrc/api/include")
+        list(APPEND PADDLE_INCLUDE_DIRS "${Paddle_ROOT}/include/paddle/phi/api/include/compat/torch/csrc/api/include")
+    endif()
     list(APPEND PADDLE_INCLUDE_DIRS "${Python_INCLUDE}")
 
     if(BUILD_CUDA_MODULE)
@@ -77,13 +83,13 @@ if(NOT Paddle_FOUND)
     if(BUILD_CUDA_MODULE)
         find_library(CUDART_LIB NAMES cudart PATHS "${CUDAToolkit_LIBRARY_DIR}")
         list(APPEND PADDLE_LIBRARY_DIRS "${CUDART_LIB}")
-    endif() 
+    endif()
 
     # handle compile flags
     set(PADDLE_CXX_FLAGS)
     if(BUILD_CUDA_MODULE)
         set(PADDLE_CXX_FLAGS "-DPADDLE_WITH_CUDA ${PADDLE_CXX_FLAGS}")
-    endif() 
+    endif()
 
     set_target_properties(paddle PROPERTIES
         IMPORTED_LOCATION "${PADDLE_LIB}"

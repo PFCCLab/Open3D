@@ -50,14 +50,20 @@ mkdir build
 cd build
 
 # Build on develop
-cmake  -DBUILD_CUDA_MODULE=ON \
+cmake  -DCMAKE_CUDA_HOST_COMPILER=/usr/bin/gcc-9 \  # specify gcc/g++ in your environment, 9 or 11 recommended
+       -DCMAKE_C_COMPILER=/usr/bin/gcc-9 \  # specify gcc/g++ in your environment, 9 or 11 recommended
+       -DCMAKE_CXX_COMPILER=/usr/bin/g++-9 \  # specify gcc/g++ in your environment, 9 or 11 recommended
+       -DBUILD_CUDA_MODULE=ON \
        -DBUILD_PADDLE_OPS=ON  \
        -DGLIBCXX_USE_CXX11_ABI=ON \
        -DBUNDLE_OPEN3D_ML=OFF \
        ..
 
 # Build on release (support CUDA archs: Pascal, Volta, Turing and Ampere.)
-cmake  -DBUILD_CUDA_MODULE=ON \
+cmake  -DCMAKE_CUDA_HOST_COMPILER=/usr/bin/gcc-9 \  # specify gcc/g++ in your environment, 9 or 11 recommended
+       -DCMAKE_C_COMPILER=/usr/bin/gcc-9 \  # specify gcc/g++ in your environment, 9 or 11 recommended
+       -DCMAKE_CXX_COMPILER=/usr/bin/g++-9 \  # specify gcc/g++ in your environment, 9 or 11 recommended
+       -DBUILD_CUDA_MODULE=ON \
        -DBUILD_COMMON_CUDA_ARCHS=ON \
        -DBUILD_PADDLE_OPS=ON  \
        -DGLIBCXX_USE_CXX11_ABI=ON \
