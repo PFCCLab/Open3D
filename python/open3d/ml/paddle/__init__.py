@@ -17,8 +17,9 @@ if _verp(_paddle.__version__).release[:2] != _o3d_paddle_version.release[:2]:
     match_paddle_ver = '.'.join(
         str(v) for v in _o3d_paddle_version.release[:2] + ('*',))
     warnings.warn(
-        f"Version mismatch: Open3D needs Paddle version {match_paddle_ver}, but "
-        f"version {_paddle.__version__} is installed",
+        f"Version mismatch detected: Open3D requires Paddle version {match_paddle_ver}, "
+        f"but version {_paddle.__version__} is installed. "
+        f"Note: Compatibility issues may arise if using Paddle < 3.0.0",
         category=UserWarning)
 
 _loaded = False
