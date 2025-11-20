@@ -25,10 +25,8 @@
 ## **Build and Install**
 
 ```bash
-# replace gcc, g++ with 9.4.0 version(important, or you may meet some problems when make install-pip-package)
-rm /usr/bin/gcc /usr/bin/g++
-mv /usr/bin/gcc.bak /usr/bin/gcc
-mv /usr/bin/g++.bak /usr/bin/g++
+# use gcc-9 and g++-9important, or you may meet some problems when make install-pip-package)
+apt install gcc-9 g++-9
 
 # install dependencies
 cd Open3D
@@ -41,8 +39,8 @@ tar -zxvf cmake-3.23.0-linux-x86_64.tar.gz
 rm -f cmake-3.23.0-linux-x86_64.tar.gz
 PATH=$PWD/cmake-3.23.0-linux-x86_64/bin:$PATH
 
-# install nightly-build paddlepaddle-gpu
-pip uninstall paddlepaddle-gpu
+# install nightly-build paddlepaddle-gpu according to your device
+# https://www.paddlepaddle.org.cn/install/quick?docurl=/documentation/docs/zh/develop/install/pip/linux-pip.html
 pip install --pre paddlepaddle-gpu -i https://www.paddlepaddle.org.cn/packages/nightly/cu118/
 
 # configure
@@ -50,19 +48,21 @@ mkdir build
 cd build
 
 # Build on develop
-cmake  -DCMAKE_CUDA_HOST_COMPILER=/usr/bin/gcc-9 \  # specify gcc/g++ in your environment, 9 or 11 recommended
-       -DCMAKE_C_COMPILER=/usr/bin/gcc-9 \  # specify gcc/g++ in your environment, 9 or 11 recommended
-       -DCMAKE_CXX_COMPILER=/usr/bin/g++-9 \  # specify gcc/g++ in your environment, 9 or 11 recommended
+# specify gcc/g++ in your environment, 9 or 11 recommended
+cmake  -DCMAKE_CUDA_HOST_COMPILER=/usr/bin/gcc-9 \
+       -DCMAKE_C_COMPILER=/usr/bin/gcc-9 \
+       -DCMAKE_CXX_COMPILER=/usr/bin/g++-9 \
        -DBUILD_CUDA_MODULE=ON \
        -DBUILD_PADDLE_OPS=ON  \
        -DGLIBCXX_USE_CXX11_ABI=ON \
        -DBUNDLE_OPEN3D_ML=OFF \
        ..
 
-# Build on release (support CUDA archs: Pascal, Volta, Turing and Ampere.)
-cmake  -DCMAKE_CUDA_HOST_COMPILER=/usr/bin/gcc-9 \  # specify gcc/g++ in your environment, 9 or 11 recommended
-       -DCMAKE_C_COMPILER=/usr/bin/gcc-9 \  # specify gcc/g++ in your environment, 9 or 11 recommended
-       -DCMAKE_CXX_COMPILER=/usr/bin/g++-9 \  # specify gcc/g++ in your environment, 9 or 11 recommended
+# or Build on release (support CUDA archs: Pascal, Volta, Turing and Ampere.)
+# specify gcc/g++ in your environment, 9 or 11 recommended
+cmake  -DCMAKE_CUDA_HOST_COMPILER=/usr/bin/gcc-9 \
+       -DCMAKE_C_COMPILER=/usr/bin/gcc-9 \
+       -DCMAKE_CXX_COMPILER=/usr/bin/g++-9 \
        -DBUILD_CUDA_MODULE=ON \
        -DBUILD_COMMON_CUDA_ARCHS=ON \
        -DBUILD_PADDLE_OPS=ON  \
