@@ -31,6 +31,14 @@ deps=(
     libudev-dev
     autoconf
     libtool
+    libxrandr-dev
+    libxinerama-dev
+    libxcursor-dev
+    libxi-dev
+    libc++-dev
+    libc++abi-dev
+    libgl1-mesa-dev
+    libglu1-mesa-dev
 )
 
 eval $(
