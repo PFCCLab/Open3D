@@ -25,7 +25,7 @@
 ## **Build and Install**
 
 ```bash
-# use gcc-9 and g++-9important, or you may meet some problems when make install-pip-package)
+# use gcc-9 and g++-9(important, or you may meet some problems when make install-pip-package)
 apt install gcc-9 g++-9
 
 # install dependencies
@@ -56,6 +56,7 @@ cmake  -DCMAKE_CUDA_HOST_COMPILER=/usr/bin/gcc-9 \
        -DBUILD_PADDLE_OPS=ON  \
        -DGLIBCXX_USE_CXX11_ABI=ON \
        -DBUNDLE_OPEN3D_ML=OFF \
+       -DPython_EXECUTABLE=$(which python)
        ..
 
 # or Build on release (support CUDA archs: Pascal, Volta, Turing and Ampere.)
@@ -68,6 +69,7 @@ cmake  -DCMAKE_CUDA_HOST_COMPILER=/usr/bin/gcc-9 \
        -DBUILD_PADDLE_OPS=ON  \
        -DGLIBCXX_USE_CXX11_ABI=ON \
        -DBUNDLE_OPEN3D_ML=OFF \
+       -DPython_EXECUTABLE=$(which python)
        ..
 
 # install whl
