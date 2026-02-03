@@ -1,0 +1,44 @@
+include(ExternalProject)
+
+set(GFLAGS_LIB_NAME gflags)
+
+# For CMake >= 4.0.0, set policy compatibility for third-party gflags' CMake.
+set(GFLAGS_POLICY_ARGS "")
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "4.0.0")
+  message(
+    WARNING
+      "gflags: forcing CMake policy compatibility for CMake >= 4.0 (CMAKE_POLICY_VERSION_MINIMUM=3.5)"
+  )
+  set(GFLAGS_POLICY_ARGS "-DCMAKE_POLICY_VERSION_MINIMUM=3.5")
+endif()
+
+ExternalProject_Add(
+  ext_gflags
+  PREFIX gflags
+  URL https://github.com/gflags/gflags/archive/refs/tags/v2.2.2.tar.gz
+  URL_HASH SHA256=34af2f15cf7367513b352bdcd2493ab14ce43692d2dcd9dfc499492966c64dcf
+  DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/gflags"
+  UPDATE_COMMAND ""
+  CMAKE_ARGS -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+             -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+             -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
+             -DCMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE}
+             -DCMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}
+             -DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}
+             -DCMAKE_C_FLAGS_DEBUG=${CMAKE_C_FLAGS_DEBUG}
+             -DCMAKE_C_FLAGS_RELEASE=${CMAKE_C_FLAGS_RELEASE}
+             ${GFLAGS_POLICY_ARGS}
+             -DBUILD_STATIC_LIBS=ON
+             -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+             -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+             -DBUILD_TESTING=OFF
+             -DCMAKE_BUILD_TYPE=${THIRD_PARTY_BUILD_TYPE}
+             ${EXTERNAL_OPTIONAL_ARGS}
+  BUILD_BYPRODUCTS
+    <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${GFLAGS_LIB_NAME}${CMAKE_STATIC_LIBRARY_SUFFIX}
+)
+
+ExternalProject_Get_Property(ext_gflags INSTALL_DIR)
+set(GFLAGS_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
+set(GFLAGS_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
+set(GFLAGS_LIBRARIES ${GFLAGS_LIB_NAME})

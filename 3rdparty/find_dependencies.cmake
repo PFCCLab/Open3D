@@ -473,7 +473,19 @@ ProcessorCount(NPROC)
 
 # CUDAToolkit (required at this point for subsequent checks and targets)
 if(BUILD_CUDA_MODULE)
-    find_package(CUDAToolkit REQUIRED)
+    if (WITH_CUDA)
+        find_package(CUDAToolkit REQUIRED)
+    elseif (WITH_ROCM)
+        find_package(HIP REQUIRED)
+        
+        find_package(hipblaslt REQUIRED)
+        find_package(hipblas REQUIRED)
+        find_package(hipsparse REQUIRED)
+        find_package(hipsolver REQUIRED)
+
+        # hipify_torch will automatically become available.
+        include(${Open3D_3RDPARTY_DIR}/hipify_torch/hipify_torch.cmake)
+    endif()
 endif()
 
 # Threads
@@ -532,37 +544,49 @@ endif()
 
 # CUB (already included in CUDA 11.0+)
 if(BUILD_CUDA_MODULE AND CUDAToolkit_VERSION VERSION_LESS "11.0")
-    include(${Open3D_3RDPARTY_DIR}/cub/cub.cmake)
-    open3d_import_3rdparty_library(3rdparty_cub
-        INCLUDE_DIRS ${CUB_INCLUDE_DIRS}
-        DEPENDS      ext_cub
-    )
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_cub)
+    if (WITH_CUDA)
+        include(${Open3D_3RDPARTY_DIR}/cub/cub.cmake)
+        open3d_import_3rdparty_library(3rdparty_cub
+            INCLUDE_DIRS ${CUB_INCLUDE_DIRS}
+            DEPENDS      ext_cub
+        )
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_cub)
+    elseif (WITH_ROCM)
+        set(CUB_INCLUDE_DIRS ${ROCM_PATH}/include)
+        open3d_import_3rdparty_library(3rdparty_cub
+            INCLUDE_DIRS ${CUB_INCLUDE_DIRS}
+        )
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_cub)
+    endif()
 endif()
 
 # cutlass
 if(BUILD_CUDA_MODULE)
-    if(USE_SYSTEM_CUTLASS)
-        find_path(3rdparty_cutlass_INCLUDE_DIR NAMES cutlass/cutlass.h)
-        if(3rdparty_cutlass_INCLUDE_DIR)
-            add_library(3rdparty_cutlass INTERFACE)
-            target_include_directories(3rdparty_cutlass INTERFACE ${3rdparty_cutlass_INCLUDE_DIR})
-            add_library(Open3D::3rdparty_cutlass ALIAS 3rdparty_cutlass)
-            if(NOT BUILD_SHARED_LIBS)
-                install(TARGETS 3rdparty_cutlass EXPORT ${PROJECT_NAME}Targets)
+    if (WITH_CUDA)
+        if(USE_SYSTEM_CUTLASS)
+            find_path(3rdparty_cutlass_INCLUDE_DIR NAMES cutlass/cutlass.h)
+            if(3rdparty_cutlass_INCLUDE_DIR)
+                add_library(3rdparty_cutlass INTERFACE)
+                target_include_directories(3rdparty_cutlass INTERFACE ${3rdparty_cutlass_INCLUDE_DIR})
+                add_library(Open3D::3rdparty_cutlass ALIAS 3rdparty_cutlass)
+                if(NOT BUILD_SHARED_LIBS)
+                    install(TARGETS 3rdparty_cutlass EXPORT ${PROJECT_NAME}Targets)
+                endif()
+            else()
+                set(USE_SYSTEM_CUTLASS OFF)
             endif()
-        else()
-            set(USE_SYSTEM_CUTLASS OFF)
         endif()
+        if(NOT USE_SYSTEM_CUTLASS)
+            include(${Open3D_3RDPARTY_DIR}/cutlass/cutlass.cmake)
+            open3d_import_3rdparty_library(3rdparty_cutlass
+                INCLUDE_DIRS ${CUTLASS_INCLUDE_DIRS}
+                DEPENDS      ext_cutlass
+            )
+        endif()
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_cutlass)
+    elseif (WITH_ROCM)
+        message(WARNING "ROCM is not supported for cutlass.")
     endif()
-    if(NOT USE_SYSTEM_CUTLASS)
-        include(${Open3D_3RDPARTY_DIR}/cutlass/cutlass.cmake)
-        open3d_import_3rdparty_library(3rdparty_cutlass
-            INCLUDE_DIRS ${CUTLASS_INCLUDE_DIRS}
-            DEPENDS      ext_cutlass
-        )
-    endif()
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_cutlass)
 endif()
 
 # Dirent
@@ -1756,80 +1780,99 @@ endif() # if(OPEN3D_USE_ONEAPI_PACKAGES)
 
 # cuBLAS
 if(BUILD_CUDA_MODULE)
-    if(WIN32)
-        # Nvidia does not provide static libraries for Windows. We don't release
-        # pip wheels for Windows with CUDA support at the moment. For the pip
-        # wheels to support CUDA on Windows out-of-the-box, we need to either
-        # ship the CUDA toolkit with the wheel (e.g. PyTorch can make use of the
-        # cudatoolkit conda package), or have a mechanism to locate the CUDA
-        # toolkit from the system.
-        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM CUDA::cusolver CUDA::cublas)
-    else()
-        # CMake docs   : https://cmake.org/cmake/help/latest/module/FindCUDAToolkit.html
-        # cusolver 11.0: https://docs.nvidia.com/cuda/archive/11.0/cusolver/index.html#static-link-lapack
-        # cublas   11.0: https://docs.nvidia.com/cuda/archive/11.0/cublas/index.html#static-library
-        # The link order below is important. Theoretically we should use
-        # open3d_find_package_3rdparty_library, but we have to insert
-        # liblapack_static.a in the middle of the targets.
-        add_library(3rdparty_cublas INTERFACE)
-        if(CUDAToolkit_VERSION VERSION_LESS "12.0")
-            target_link_libraries(3rdparty_cublas INTERFACE
-                CUDA::cusolver_static
-                ${CUDAToolkit_LIBRARY_DIR}/liblapack_static.a
-                CUDA::cusparse_static
-                CUDA::cublas_static
-                CUDA::cublasLt_static
-                CUDA::culibos
-            )
+    if (WITH_CUDA)
+        if(WIN32)
+            # Nvidia does not provide static libraries for Windows. We don't release
+            # pip wheels for Windows with CUDA support at the moment. For the pip
+            # wheels to support CUDA on Windows out-of-the-box, we need to either
+            # ship the CUDA toolkit with the wheel (e.g. PyTorch can make use of the
+            # cudatoolkit conda package), or have a mechanism to locate the CUDA
+            # toolkit from the system.
+            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM CUDA::cusolver CUDA::cublas)
         else()
-            # In CUDA12.0 the liblapack_static.a is deprecated and removed.
-            # Use the libcusolver_lapack_static.a instead.
-            target_link_libraries(3rdparty_cublas INTERFACE
-                CUDA::cusolver_static
-                ${CUDAToolkit_LIBRARY_DIR}/libcusolver_lapack_static.a
-                CUDA::cusparse_static
-                CUDA::cublas_static
-                CUDA::cublasLt_static
-                CUDA::culibos
-            )
+            # CMake docs   : https://cmake.org/cmake/help/latest/module/FindCUDAToolkit.html
+            # cusolver 11.0: https://docs.nvidia.com/cuda/archive/11.0/cusolver/index.html#static-link-lapack
+            # cublas   11.0: https://docs.nvidia.com/cuda/archive/11.0/cublas/index.html#static-library
+            # The link order below is important. Theoretically we should use
+            # open3d_find_package_3rdparty_library, but we have to insert
+            # liblapack_static.a in the middle of the targets.
+            add_library(3rdparty_cublas INTERFACE)
+            if(CUDAToolkit_VERSION VERSION_LESS "12.0")
+                target_link_libraries(3rdparty_cublas INTERFACE
+                    CUDA::cusolver_static
+                    ${CUDAToolkit_LIBRARY_DIR}/liblapack_static.a
+                    CUDA::cusparse_static
+                    CUDA::cublas_static
+                    CUDA::cublasLt_static
+                    CUDA::culibos
+                )
+            else()
+                # In CUDA12.0 the liblapack_static.a is deprecated and removed.
+                # Use the libcusolver_lapack_static.a instead.
+                target_link_libraries(3rdparty_cublas INTERFACE
+                    CUDA::cusolver_static
+                    ${CUDAToolkit_LIBRARY_DIR}/libcusolver_lapack_static.a
+                    CUDA::cusparse_static
+                    CUDA::cublas_static
+                    CUDA::cublasLt_static
+                    CUDA::culibos
+                )
+            endif()
+            if(NOT BUILD_SHARED_LIBS)
+                # Listed in ${CMAKE_INSTALL_PREFIX}/lib/cmake/Open3D/Open3DTargets.cmake.
+                install(TARGETS 3rdparty_cublas EXPORT Open3DTargets)
+                list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "CUDAToolkit")
+            endif()
+            add_library(Open3D::3rdparty_cublas ALIAS 3rdparty_cublas)
+            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_cublas)
         endif()
+    elseif (WITH_ROCM)
+        add_library(3rdparty_hipblas INTERFACE)
+        target_link_libraries(3rdparty_hipblas INTERFACE
+            roc::hipblas
+            roc::hipsparse
+            roc::hipsolver
+        )
         if(NOT BUILD_SHARED_LIBS)
             # Listed in ${CMAKE_INSTALL_PREFIX}/lib/cmake/Open3D/Open3DTargets.cmake.
-            install(TARGETS 3rdparty_cublas EXPORT Open3DTargets)
-            list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "CUDAToolkit")
+            install(TARGETS 3rdparty_hipblas EXPORT Open3DTargets)
         endif()
-        add_library(Open3D::3rdparty_cublas ALIAS 3rdparty_cublas)
-        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_cublas)
+        add_library(Open3D::3rdparty_hipblas ALIAS 3rdparty_hipblas)
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_hipblas)
     endif()
 endif()
 
 # NPP
 if (BUILD_CUDA_MODULE)
-    # NPP library list: https://docs.nvidia.com/cuda/npp/index.html
-    if(WIN32)
-        open3d_find_package_3rdparty_library(3rdparty_cuda_npp
-            REQUIRED
-            PACKAGE CUDAToolkit
-            TARGETS CUDA::nppc
-                    CUDA::nppicc
-                    CUDA::nppif
-                    CUDA::nppig
-                    CUDA::nppim
-                    CUDA::nppial
-        )
-    else()
-        open3d_find_package_3rdparty_library(3rdparty_cuda_npp
-            REQUIRED
-            PACKAGE CUDAToolkit
-            TARGETS CUDA::nppc_static
-                    CUDA::nppicc_static
-                    CUDA::nppif_static
-                    CUDA::nppig_static
-                    CUDA::nppim_static
-                    CUDA::nppial_static
-        )
+    if (WITH_CUDA)
+        # NPP library list: https://docs.nvidia.com/cuda/npp/index.html
+        if(WIN32)
+            open3d_find_package_3rdparty_library(3rdparty_cuda_npp
+                REQUIRED
+                PACKAGE CUDAToolkit
+                TARGETS CUDA::nppc
+                        CUDA::nppicc
+                        CUDA::nppif
+                        CUDA::nppig
+                        CUDA::nppim
+                        CUDA::nppial
+            )
+        else()
+            open3d_find_package_3rdparty_library(3rdparty_cuda_npp
+                REQUIRED
+                PACKAGE CUDAToolkit
+                TARGETS CUDA::nppc_static
+                        CUDA::nppicc_static
+                        CUDA::nppif_static
+                        CUDA::nppig_static
+                        CUDA::nppim_static
+                        CUDA::nppial_static
+            )
+        endif()
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_cuda_npp)
+    elseif(WITH_ROCM)
+        message(WARNING "ROCM is not supported for NPP. ")
     endif()
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_cuda_npp)
 endif ()
 
 # IPP
@@ -1942,6 +1985,50 @@ if(BUILD_WEBRTC)
 else()
     # Don't include WebRTC headers in Open3D.h.
     set(BUILD_WEBRTC_COMMENT "//")
+endif()
+
+# gflags
+if(USE_SYSTEM_GFLAGS)
+    open3d_find_package_3rdparty_library(3rdparty_gflags
+        PACKAGE gflags
+        TARGETS gflags
+    )
+    if(NOT 3rdparty_gflags_FOUND)
+        set(USE_SYSTEM_GFLAGS OFF)
+    endif()
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_gflags)
+endif()
+if(NOT USE_SYSTEM_GFLAGS)
+    include(${Open3D_3RDPARTY_DIR}/gflags/gflags.cmake)
+    open3d_import_3rdparty_library(3rdparty_gflags
+        INCLUDE_DIRS ${GFLAGS_INCLUDE_DIRS}
+        LIB_DIR      ${GFLAGS_LIB_DIR}
+        LIBRARIES    ${GFLAGS_LIBRARIES}
+        DEPENDS      ext_gflags
+    )
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_gflags)
+endif()
+
+# glog 
+if(USE_SYSTEM_GLOG)
+    open3d_find_package_3rdparty_library(3rdparty_glog
+        PACKAGE glog
+        TARGETS glog
+    )
+    if(NOT 3rdparty_glog_FOUND)
+        set(USE_SYSTEM_GLOG OFF)
+    endif()
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_glog)
+endif()
+if(NOT USE_SYSTEM_GLOG)
+    include(${Open3D_3RDPARTY_DIR}/glog/glog.cmake)
+    open3d_import_3rdparty_library(3rdparty_glog
+        INCLUDE_DIRS ${GLOG_INCLUDE_DIRS}
+        LIB_DIR      ${GLOG_LIB_DIR}
+        LIBRARIES    ${GLOG_LIBRARIES}
+        DEPENDS      ext_glog
+    )
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_glog)
 endif()
 
 # Compactify list of external modules.

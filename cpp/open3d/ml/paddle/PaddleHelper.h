@@ -241,7 +241,11 @@ std::tuple<bool, std::string> CheckShape(paddle::Tensor tensor,
 
 #ifdef BUILD_CUDA_MODULE
 static void cudaFreeWrapper(void* ptr) {
+#if __HIP_PLATFORM_AMD__
+    phi::gpuError_t result = hipFree(ptr);
+#else
     phi::gpuError_t result = cudaFree(ptr);
+#endif
     PADDLE_ENFORCE_GPU_SUCCESS(result);
 }
 #endif
@@ -260,7 +264,11 @@ paddle::Tensor InitializedEmptyTensor(const phi::IntArray& shape,
     T* ptr = nullptr;
     if (phi::is_gpu_place(place)) {
 #ifdef BUILD_CUDA_MODULE
+#if __HIP_PLATFORM_AMD__
+        phi::gpuError_t result = hipMalloc(&ptr, sizeof(T) * 1);
+#else
         phi::gpuError_t result = cudaMalloc(&ptr, sizeof(T) * 1);
+#endif
         PADDLE_ENFORCE_GPU_SUCCESS(result);
         deleter = std::function<void(void*)>(cudaFreeWrapper);
 #else
@@ -269,7 +277,7 @@ paddle::Tensor InitializedEmptyTensor(const phi::IntArray& shape,
 #endif
     } else if (phi::is_cpu_place(place)) {
         ptr = (T*)malloc(sizeof(T) * 1);
-        deleter = std::function<void(void*)>(free);
+        deleter = std::function<void(void*)>(std::free);
     } else {
         PD_CHECK(false, "Not supported backend!");
     }

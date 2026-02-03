@@ -38,7 +38,6 @@ void pybind_geometry(py::module& m);
 void pybind_geometry_class(py::module& m);
 void pybind_drawable_geometry_class(py::module& m);
 void pybind_tensormap(py::module& m);
-void pybind_image(py::module& m);
 void pybind_pointcloud(py::module& m);
 void pybind_lineset(py::module& m);
 void pybind_trianglemesh(py::module& m);

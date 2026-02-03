@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/ml/impl/continuous_conv/ContinuousConvCUDAKernels.h"
 #include "open3d/utility/Helper.h"
 

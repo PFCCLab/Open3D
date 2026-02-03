@@ -12,8 +12,15 @@
 
 #pragma once
 
-#ifdef BUILD_CUDA_MODULE
+#if BUILD_CUDA_MODULE
+
+#if __HIP_PLATFORM_AMD__
+#include <hipblas/hipblas.h>
+#include <hipsolver/hipsolver.h>
+#else
 #include <cublas_v2.h>
 #include <cusolverDn.h>
 #include <cusolver_common.h>
+#endif
+
 #endif

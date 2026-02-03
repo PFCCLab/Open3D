@@ -27,7 +27,7 @@
 namespace open3d {
 namespace core {
 
-// Device-specific, safe for current NVIDIA architectures.
+// Device-specific
 static constexpr uint32_t kWarpSize = 32;
 
 //////////////////////

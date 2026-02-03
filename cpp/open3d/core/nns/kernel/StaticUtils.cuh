@@ -31,7 +31,11 @@
 
 #pragma once
 
+#if __HIP_PLATFORM_AMD__
+#include <hip/hip_runtime.h>
+#else
 #include <cuda.h>
+#endif
 
 // allow usage for non-CUDA files
 #ifndef __host__

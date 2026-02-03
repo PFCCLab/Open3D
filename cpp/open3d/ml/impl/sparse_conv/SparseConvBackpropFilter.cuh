@@ -8,8 +8,16 @@
 #pragma once
 #define EIGEN_USE_GPU
 
+#if __HIP_PLATFORM_AMD__
+
+#include <hipblas/hipblas.h>
+
+#else
+
 #include <cutlass/gemm/gemm.h>
 #include <cutlass/gemm/sgemm_traits.h>
+
+#endif  // __HIP_PLATFORM_AMD__
 
 #include "open3d/ml/impl/misc/MemoryAllocation.h"
 #include "open3d/ml/impl/sparse_conv/SparseConvCUDAKernels.h"
@@ -150,6 +158,7 @@ void SparseConvBackpropFilterCUDA(const cudaStream_t& stream,
     size_t num_cols_per_run =
             std::min(mem_columns.second / bytes_per_column, size_t(num_out));
 
+#if !__HIP_PLATFORM_AMD__
     typedef cutlass::gemm::SgemmTraits<
             cutlass::MatrixLayout::kColumnMajor,  // layout of A matrix
             cutlass::MatrixLayout::kRowMajor,     // layout of B matrix
@@ -158,6 +167,7 @@ void SparseConvBackpropFilterCUDA(const cudaStream_t& stream,
             GemmTraits;
 
     typedef cutlass::gemm::Gemm<GemmTraits> Gemm;
+#endif  // !__HIP_PLATFORM_AMD__
 
     TFeat* columns = (TFeat*)mem_columns.first;
 
@@ -175,7 +185,6 @@ void SparseConvBackpropFilterCUDA(const cudaStream_t& stream,
                 neighbors_index, neighbors_kernel_index, neighbors_importance,
                 neighbors_row_splits, num_kernel_elements, normalize);
 
-        typename Gemm::Params params;
         // C is MxN
         // B is KxN
         // A is MxK
@@ -191,6 +200,26 @@ void SparseConvBackpropFilterCUDA(const cudaStream_t& stream,
         float beta = 1;
         float* C = filter_backprop;
         int ldc = m;
+
+#if __HIP_PLATFORM_AMD__
+        hipblasHandle_t handle;
+        hipblasStatus_t status;
+        status = hipblasCreate(&handle);
+        if (status != HIPBLAS_STATUS_SUCCESS) {
+            throw std::runtime_error("Failed to create HIPBLAS handle.");
+        }
+        status = hipblasSgemm(handle, HIPBLAS_OP_N, HIPBLAS_OP_T, m, n, k,
+                              &alpha, A, lda, B, ldb, &beta, C, ldc);
+        if (status != HIPBLAS_STATUS_SUCCESS) {
+            throw std::runtime_error("Failed to launch HIPBLAS Gemm.");
+        }
+        status = hipblasDestroy(handle);
+        if (status != HIPBLAS_STATUS_SUCCESS) {
+            throw std::runtime_error("Failed to destroy HIPBLAS handle.");
+        }
+#else
+
+        typename Gemm::Params params;
 
         int result = params.initialize(m,      // GEMM M dimension
                                        n,      // GEMM N dimension
@@ -212,6 +241,7 @@ void SparseConvBackpropFilterCUDA(const cudaStream_t& stream,
         }
 
         Gemm::launch(params, stream);
+#endif  // __HIP_PLATFORM_AMD__
     }
 }
 

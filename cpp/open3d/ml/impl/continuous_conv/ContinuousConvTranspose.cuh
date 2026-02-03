@@ -8,8 +8,16 @@
 #pragma once
 #define EIGEN_USE_GPU
 
+#if __HIP_PLATFORM_AMD__
+
+#include <hipblas/hipblas.h>
+
+#else
+
 #include <cutlass/gemm/gemm.h>
 #include <cutlass/gemm/sgemm_traits.h>
+
+#endif  // __HIP_PLATFORM_AMD__
 
 #include "open3d/ml/impl/continuous_conv/ContinuousConvCUDAKernels.h"
 #include "open3d/ml/impl/misc/MemoryAllocation.h"
@@ -102,6 +110,7 @@ void CConvTransposeComputeFeaturesCUDA(
     size_t num_cols_per_run =
             std::min(mem_columns.second / bytes_per_column, size_t(num_out));
 
+#if !__HIP_PLATFORM_AMD__
     typedef cutlass::gemm::SgemmTraits<
             cutlass::MatrixLayout::kColumnMajor,  // layout of A matrix
             cutlass::MatrixLayout::kColumnMajor,  // layout of B matrix
@@ -110,6 +119,7 @@ void CConvTransposeComputeFeaturesCUDA(
             GemmTraits;
 
     typedef cutlass::gemm::Gemm<GemmTraits> Gemm;
+#endif  // !__HIP_PLATFORM_AMD__
 
     TFeat* columns = (TFeat*)mem_columns.first;
 
@@ -130,7 +140,6 @@ void CConvTransposeComputeFeaturesCUDA(
                 interpolation, coordinate_mapping, align_corners,
                 individual_extent, isotropic_extent, normalize);
 
-        typename Gemm::Params params;
         // C is MxN
         // B is KxN
         // A is MxK
@@ -145,6 +154,24 @@ void CConvTransposeComputeFeaturesCUDA(
         float beta = 1;
         float* C = out_features + (run_i * num_cols_per_run * out_channels);
         int ldc = m;
+#if __HIP_PLATFORM_AMD__
+        hipblasHandle_t handle;
+        hipblasStatus_t status;
+        status = hipblasCreate(&handle);
+        if (status != HIPBLAS_STATUS_SUCCESS) {
+            throw std::runtime_error("Failed to create HIPBLAS handle.");
+        }
+        status = hipblasSgemm(handle, HIPBLAS_OP_N, HIPBLAS_OP_N, m, n, k,
+                              &alpha, A, lda, B, ldb, &beta, C, ldc);
+        if (status != HIPBLAS_STATUS_SUCCESS) {
+            throw std::runtime_error("Failed to launch HIPBLAS Gemm.");
+        }
+        status = hipblasDestroy(handle);
+        if (status != HIPBLAS_STATUS_SUCCESS) {
+            throw std::runtime_error("Failed to destroy HIPBLAS handle.");
+        }
+#else
+        typename Gemm::Params params;
 
         int result =
                 params.initialize(m,      // GEMM M dimension
@@ -168,6 +195,7 @@ void CConvTransposeComputeFeaturesCUDA(
         }
 
         Gemm::launch(params, stream);
+#endif  // __HIP_PLATFORM_AMD__
     }
 
     if (out_importance) {

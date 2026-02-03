@@ -31,13 +31,20 @@
 
 #pragma once
 
+#if __HIP_PLATFORM_AMD__
+#include <hip/hip_fp16.h>
+#include <hip/hip_runtime.h>
+
+using half = __half;
+#else
 #include <cuda.h>
+#endif
 
 namespace open3d {
 namespace core {
 
 // defines to simplify the SASS assembly structure file/line in the profiler
-#if CUDA_VERSION >= 9000
+#if CUDA_VERSION >= 9000 || !__HIP_PLATFORM_AMD__
 #define SHFL_SYNC(VAL, SRC_LANE, WIDTH) \
     __shfl_sync(0xffffffff, VAL, SRC_LANE, WIDTH)
 #else
@@ -46,7 +53,7 @@ namespace core {
 
 template <typename T>
 inline __device__ T shfl(const T val, int srcLane, int width = kWarpSize) {
-#if CUDA_VERSION >= 9000
+#if CUDA_VERSION >= 9000 || !__HIP_PLATFORM_AMD__
     return __shfl_sync(0xffffffff, val, srcLane, width);
 #else
     return __shfl(val, srcLane, width);
@@ -66,7 +73,7 @@ template <typename T>
 inline __device__ T shfl_up(const T val,
                             unsigned int delta,
                             int width = kWarpSize) {
-#if CUDA_VERSION >= 9000
+#if CUDA_VERSION >= 9000 || !__HIP_PLATFORM_AMD__
     return __shfl_up_sync(0xffffffff, val, delta, width);
 #else
     return __shfl_up(val, delta, width);
@@ -88,7 +95,7 @@ template <typename T>
 inline __device__ T shfl_down(const T val,
                               unsigned int delta,
                               int width = kWarpSize) {
-#if CUDA_VERSION >= 9000
+#if CUDA_VERSION >= 9000 || !__HIP_PLATFORM_AMD__
     return __shfl_down_sync(0xffffffff, val, delta, width);
 #else
     return __shfl_down(val, delta, width);
@@ -107,7 +114,7 @@ inline __device__ T* shfl_down(T* const val,
 
 template <typename T>
 inline __device__ T shfl_xor(const T val, int laneMask, int width = kWarpSize) {
-#if CUDA_VERSION >= 9000
+#if CUDA_VERSION >= 9000 || !__HIP_PLATFORM_AMD__
     return __shfl_xor_sync(0xffffffff, val, laneMask, width);
 #else
     return __shfl_xor(val, laneMask, width);
@@ -125,22 +132,32 @@ inline __device__ T* shfl_xor(T* const val,
 }
 
 // CUDA 9.0+ has half shuffle
-#if CUDA_VERSION < 9000
+#if CUDA_VERSION < 9000 || __HIP_PLATFORM_AMD__
 inline __device__ half shfl(half v, int srcLane, int width = kWarpSize) {
+    half h;
+#if __HIP_PLATFORM_AMD__
+    unsigned int vu = *reinterpret_cast<unsigned int*>(&v);
+    vu = __shfl(vu, srcLane, width);
+    h = *reinterpret_cast<half*>(&vu);
+#else
     unsigned int vu = v.x;
     vu = __shfl(vu, srcLane, width);
-
-    half h;
     h.x = (unsigned short)vu;
+#endif
     return h;
 }
 
 inline __device__ half shfl_xor(half v, int laneMask, int width = kWarpSize) {
+    half h;
+#if __HIP_PLATFORM_AMD__
+    unsigned int vu = *reinterpret_cast<unsigned int*>(&v);
+    vu = __shfl_xor(vu, laneMask, width);
+    h = *reinterpret_cast<half*>(&vu);
+#else
     unsigned int vu = v.x;
     vu = __shfl_xor(vu, laneMask, width);
-
-    half h;
     h.x = (unsigned short)vu;
+#endif
     return h;
 }
 #endif  // CUDA_VERSION

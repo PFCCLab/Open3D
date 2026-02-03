@@ -58,7 +58,11 @@ public:
         std::vector<uint8_t *> value_ptrs(n_values_);
         for (size_t i = 0; i < n_values_; ++i) {
             value_ptrs[i] = value_buffers[i].GetDataPtr<uint8_t>();
+#if __HIP_PLATFORM_AMD__
+            hipMemset(value_ptrs[i], 0, capacity_ * value_dsizes_host[i]);
+#else
             cudaMemset(value_ptrs[i], 0, capacity_ * value_dsizes_host[i]);
+#endif
         }
         values_ = static_cast<uint8_t **>(
                 MemoryManager::Malloc(n_values_ * sizeof(uint8_t *), device));
@@ -67,7 +71,11 @@ public:
 
         heap_top_ = hashmap_buffer.GetHeapTop().cuda.GetDataPtr<int>();
         cuda::Synchronize();
+#if __HIP_PLATFORM_AMD__
+        OPEN3D_CUDA_CHECK(hipGetLastError());
+#else
         OPEN3D_CUDA_CHECK(cudaGetLastError());
+#endif
     }
 
     __host__ void Shutdown(const Device &device) {

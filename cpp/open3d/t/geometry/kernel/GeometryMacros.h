@@ -11,7 +11,7 @@
 
 #include "open3d/core/CUDAUtils.h"
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
 
 #if defined(__CUDA_ARCH__)
 #if __CUDA_ARCH__ < 600
@@ -54,7 +54,7 @@ OPEN3D_HOST_DEVICE scalar_t Square(const scalar_t &x) {
 }  // namespace open3d
 
 // https://stackoverflow.com/a/51549250
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(__HIPCC__)
 __device__ inline float atomicMinf(float *addr, float value) {
     float old;
     old = (value >= 0) ? __int_as_float(

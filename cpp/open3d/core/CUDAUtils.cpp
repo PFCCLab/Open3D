@@ -20,6 +20,15 @@ namespace cuda {
 
 int DeviceCount() {
 #ifdef BUILD_CUDA_MODULE
+#if __HIP_PLATFORM_AMD__
+    try {
+        int num_devices;
+        OPEN3D_CUDA_CHECK(hipGetDeviceCount(&num_devices));
+        return num_devices;
+    } catch (const std::runtime_error&) {
+        return 0;
+    }
+#else
     try {
         int num_devices;
         OPEN3D_CUDA_CHECK(cudaGetDeviceCount(&num_devices));
@@ -30,6 +39,7 @@ int DeviceCount() {
     catch (const std::runtime_error&) {
         return 0;
     }
+#endif
 #else
     return 0;
 #endif
@@ -67,7 +77,11 @@ void Synchronize(const Device& device) {
 #ifdef BUILD_CUDA_MODULE
     if (device.IsCUDA()) {
         CUDAScopedDevice scoped_device(device);
+#if __HIP_PLATFORM_AMD__
+        OPEN3D_CUDA_CHECK(hipDeviceSynchronize());
+#else
         OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+#endif
     }
 #endif
 }
@@ -132,13 +146,21 @@ bool SupportsMemoryPools(const Device& device) {
 #ifdef BUILD_CUDA_MODULE
 int GetDevice() {
     int device;
+#if __HIP_PLATFORM_AMD__
+    OPEN3D_CUDA_CHECK(hipGetDevice(&device));
+#else
     OPEN3D_CUDA_CHECK(cudaGetDevice(&device));
+#endif
     return device;
 }
 
 static void SetDevice(int device_id) {
     AssertCUDADeviceAvailable(device_id);
+#if __HIP_PLATFORM_AMD__
+    OPEN3D_CUDA_CHECK(hipSetDevice(device_id));
+#else
     OPEN3D_CUDA_CHECK(cudaSetDevice(device_id));
+#endif
 }
 
 class CUDAStream {
@@ -149,20 +171,37 @@ public:
         static thread_local CUDAStream instance;
         return instance;
     }
+#if __HIP_PLATFORM_AMD__
+    hipStream_t Get() { return stream_; }
+    void Set(hipStream_t stream) { stream_ = stream; }
 
+    static hipStream_t Default() { return static_cast<hipStream_t>(0); }
+#else
     cudaStream_t Get() { return stream_; }
     void Set(cudaStream_t stream) { stream_ = stream; }
 
     static cudaStream_t Default() { return static_cast<cudaStream_t>(0); }
+#endif
 
 private:
     CUDAStream() = default;
     CUDAStream(const CUDAStream&) = delete;
     CUDAStream& operator=(const CUDAStream&) = delete;
 
+#if __HIP_PLATFORM_AMD__
+    hipStream_t stream_ = Default();
+#else
     cudaStream_t stream_ = Default();
+#endif
 };
 
+#if __HIP_PLATFORM_AMD__
+hipStream_t GetStream() { return CUDAStream::GetInstance().Get(); }
+
+void SetStream(hipStream_t stream) { CUDAStream::GetInstance().Set(stream); }
+
+hipStream_t GetDefaultStream() { return CUDAStream::Default(); }
+#else
 cudaStream_t GetStream() { return CUDAStream::GetInstance().Get(); }
 
 static void SetStream(cudaStream_t stream) {
@@ -170,6 +209,7 @@ static void SetStream(cudaStream_t stream) {
 }
 
 cudaStream_t GetDefaultStream() { return CUDAStream::Default(); }
+#endif
 
 #endif
 
@@ -194,11 +234,19 @@ constexpr CUDAScopedStream::CreateNewStreamTag
 
 CUDAScopedStream::CUDAScopedStream(const CreateNewStreamTag&)
     : prev_stream_(cuda::GetStream()), owns_new_stream_(true) {
+#if __HIP_PLATFORM_AMD__
+    OPEN3D_CUDA_CHECK(hipStreamCreate(&new_stream_));
+#else
     OPEN3D_CUDA_CHECK(cudaStreamCreate(&new_stream_));
+#endif
     cuda::SetStream(new_stream_);
 }
 
+#if __HIP_PLATFORM_AMD__
+CUDAScopedStream::CUDAScopedStream(hipStream_t stream)
+#else
 CUDAScopedStream::CUDAScopedStream(cudaStream_t stream)
+#endif
     : prev_stream_(cuda::GetStream()),
       new_stream_(stream),
       owns_new_stream_(false) {
@@ -207,7 +255,11 @@ CUDAScopedStream::CUDAScopedStream(cudaStream_t stream)
 
 CUDAScopedStream::~CUDAScopedStream() {
     if (owns_new_stream_) {
+#if __HIP_PLATFORM_AMD__
+        OPEN3D_CUDA_CHECK(hipStreamDestroy(new_stream_));
+#else
         OPEN3D_CUDA_CHECK(cudaStreamDestroy(new_stream_));
+#endif
     }
     cuda::SetStream(prev_stream_);
 }
@@ -253,11 +305,26 @@ CUDAState::CUDAState() {
 
                 // Check access.
                 int can_access = 0;
+#if __HIP_PLATFORM_AMD__
+                OPEN3D_CUDA_CHECK(
+                        hipDeviceCanAccessPeer(&can_access, src_id, tar_id));
+#else
                 OPEN3D_CUDA_CHECK(
                         cudaDeviceCanAccessPeer(&can_access, src_id, tar_id));
+#endif
                 // Enable access.
                 if (can_access) {
                     p2p_enabled_[src_id][tar_id] = true;
+#if __HIP_PLATFORM_AMD__
+                    hipError_t err = hipDeviceEnablePeerAccess(tar_id, 0);
+                    if (err == hipErrorPeerAccessAlreadyEnabled) {
+                        // Ignore error since P2P is already enabled.
+                        // Add void to suppress unused variable warning.
+                        (void)hipGetLastError();
+                    } else {
+                        OPEN3D_CUDA_CHECK(err);
+                    }
+#else
                     cudaError_t err = cudaDeviceEnablePeerAccess(tar_id, 0);
                     if (err == cudaErrorPeerAccessAlreadyEnabled) {
                         // Ignore error since P2P is already enabled.
@@ -265,6 +332,7 @@ CUDAState::CUDAState() {
                     } else {
                         OPEN3D_CUDA_CHECK(err);
                     }
+#endif
                 } else {
                     p2p_enabled_[src_id][tar_id] = false;
                 }
@@ -275,22 +343,36 @@ CUDAState::CUDAState() {
 
 int GetCUDACurrentDeviceTextureAlignment() {
     int value;
+#if __HIP_PLATFORM_AMD__
+    OPEN3D_CUDA_CHECK(hipDeviceGetAttribute(
+            &value, hipDeviceAttributeTextureAlignment, cuda::GetDevice()));
+#else
     OPEN3D_CUDA_CHECK(cudaDeviceGetAttribute(
             &value, cudaDevAttrTextureAlignment, cuda::GetDevice()));
+#endif
     return value;
 }
 
 int GetCUDACurrentWarpSize() {
     int value;
+#if __HIP_PLATFORM_AMD__
+    OPEN3D_CUDA_CHECK(hipDeviceGetAttribute(&value, hipDeviceAttributeWarpSize,
+                                            cuda::GetDevice()));
+#else
     OPEN3D_CUDA_CHECK(cudaDeviceGetAttribute(&value, cudaDevAttrWarpSize,
                                              cuda::GetDevice()));
+#endif
     return value;
 }
 
 size_t GetCUDACurrentTotalMemSize() {
     size_t free;
     size_t total;
+#if __HIP_PLATFORM_AMD__
+    OPEN3D_CUDA_CHECK(hipMemGetInfo(&free, &total));
+#else
     OPEN3D_CUDA_CHECK(cudaMemGetInfo(&free, &total));
+#endif
     return total;
 }
 
@@ -304,21 +386,38 @@ size_t GetCUDACurrentTotalMemSize() {
 namespace open3d {
 namespace core {
 
+#if __HIP_PLATFORM_AMD__
+void __OPEN3D_CUDA_CHECK(hipError_t err, const char* file, const int line) {
+    if (err != hipSuccess) {
+        utility::LogError("{}:{} CUDA runtime error: {}", file, line,
+                          hipGetErrorString(err));
+    }
+}
+#else
 void __OPEN3D_CUDA_CHECK(cudaError_t err, const char* file, const int line) {
     if (err != cudaSuccess) {
         utility::LogError("{}:{} CUDA runtime error: {}", file, line,
                           cudaGetErrorString(err));
     }
 }
+#endif
 
 void __OPEN3D_GET_LAST_CUDA_ERROR(const char* message,
                                   const char* file,
                                   const int line) {
+#if __HIP_PLATFORM_AMD__
+    hipError_t err = hipGetLastError();
+    if (err != hipSuccess) {
+        utility::LogError("{}:{} {}: OPEN3D_GET_LAST_CUDA_ERROR(): {}", file,
+                          line, message, hipGetErrorString(err));
+    }
+#else
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) {
         utility::LogError("{}:{} {}: OPEN3D_GET_LAST_CUDA_ERROR(): {}", file,
                           line, message, cudaGetErrorString(err));
     }
+#endif
 }
 
 }  // namespace core

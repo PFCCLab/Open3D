@@ -32,6 +32,23 @@ if (WITH_IPPICV)
     )
 endif()
 
+if (WITH_ROCM)
+    include(Hipify)
+
+    get_target_property(SOURCE_LIST tgeometry_kernel SOURCES)
+    get_hipified_list("${SOURCE_LIST}" HIPIFIED_SOURCE_LIST)
+
+    foreach(src IN LISTS HIPIFIED_SOURCE_LIST)
+        get_filename_component(ext ${src} EXT)
+        if(ext STREQUAL ".cu")
+            set_source_files_properties(${src} PROPERTIES LANGUAGE HIP)
+        endif()
+    endforeach()
+
+    set_property(TARGET tgeometry_kernel PROPERTY SOURCES ${HIPIFIED_SOURCE_LIST})
+endif()
+
+
 open3d_show_and_abort_on_warning(tgeometry_kernel)
 open3d_set_global_properties(tgeometry_kernel)
 open3d_set_open3d_lib_properties(tgeometry_kernel HIDDEN)

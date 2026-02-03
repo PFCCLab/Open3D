@@ -1,0 +1,43 @@
+{
+    "custom_map": {
+        "cub::" : "hipcub::",
+        "cuStreamGetCtx": "hipStreamGetCtx",
+
+        "cusolverStatus_t": "hipsolverStatus_t",
+        "cusolverDnHandle_t": "hipsolverDnHandle_t",
+        "CUSOLVER_STATUS_SUCCESS": "HIPSOLVER_STATUS_SUCCESS",
+        "CUSOLVER_STATUS_INTERNAL_ERROR": "HIPSOLVER_STATUS_INTERNAL_ERROR",
+
+        "open3d/core/linalg/BlasWrapper.h": "open3d/core/linalg/BlasWrapper_hip.h",
+        "open3d/core/linalg/LinalgUtils.h": "open3d/core/linalg/LinalgUtils_hip.h",
+        "open3d/core/linalg/LapackWrapper.h": "open3d/core/linalg/LapackWrapper_hip.h",
+        "open3d/ml/Helper.h": "open3d/ml/Helper_hip.h",
+
+        "open3d/ml/impl/continuous_conv/ContinuousConvCUDAKernels.h": "open3d/ml/impl/continuous_conv/ContinuousConvHIPKernels.h",
+        "open3d/ml/impl/sparse_conv/SparseConvCUDAKernels.h": "open3d/ml/impl/sparse_conv/SparseConvHIPKernels.h",
+
+        "open3d/ml/impl/continuous_conv/ContinuousConv.cuh": "open3d/ml/impl/continuous_conv/ContinuousConv_hip.cuh",
+        "open3d/ml/impl/continuous_conv/ContinuousConvBackpropFilter.cuh": "open3d/ml/impl/continuous_conv/ContinuousConvBackpropFilter_hip.cuh",
+        "open3d/ml/impl/continuous_conv/ContinuousConvTranspose.cuh": "open3d/ml/impl/continuous_conv/ContinuousConvTranspose_hip.cuh",
+        "open3d/ml/impl/continuous_conv/ContinuousConvTransposeBackpropFilter.cuh": "open3d/ml/impl/continuous_conv/ContinuousConvTransposeBackpropFilter_hip.cuh",
+        "open3d/ml/impl/sparse_conv/SparseConv.cuh": "open3d/ml/impl/sparse_conv/SparseConv_hip.cuh",
+        "open3d/ml/impl/sparse_conv/SparseConvBackpropFilter.cuh": "open3d/ml/impl/sparse_conv/SparseConvBackpropFilter_hip.cuh",
+        "open3d/ml/impl/sparse_conv/SparseConvTranspose.cuh": "open3d/ml/impl/sparse_conv/SparseConvTranspose_hip.cuh",
+        "open3d/ml/impl/sparse_conv/SparseConvTransposeBackpropFilter.cuh": "open3d/ml/impl/sparse_conv/SparseConvTransposeBackpropFilter_hip.cuh",
+        
+        "open3d/ml/impl/misc/ReduceSubarraysSum.cuh": "open3d/ml/impl/misc/ReduceSubarraysSum_hip.cuh",
+        "open3d/ml/impl/misc/RaggedToDense.cuh": "open3d/ml/impl/misc/RaggedToDense_hip.cuh",
+        "open3d/ml/impl/misc/Voxelize.cuh": "open3d/ml/impl/misc/Voxelize_hip.cuh",
+        "open3d/ml/impl/misc/InvertNeighborsList.cuh": "open3d/ml/impl/misc/InvertNeighborsList_hip.cuh",
+        "open3d/ml/contrib/PointSampling.cuh": "open3d/ml/contrib/PointSampling_hip.cuh",
+        "open3d/ml/contrib/TrilinearDevoxelize.cuh": "open3d/ml/contrib/TrilinearDevoxelize_hip.cuh",
+        "open3d/ml/contrib/BallQuery.cuh": "open3d/ml/contrib/BallQuery_hip.cuh",
+        "open3d/ml/contrib/InterpolatePoints.cuh": "open3d/ml/contrib/InterpolatePoints_hip.cuh",
+        "open3d/core/nns/FixedRadiusSearchImpl.cuh": "open3d/core/nns/FixedRadiusSearchImpl_hip.cuh",
+        "open3d/core/nns/kernel/BlockSelectImpl.cuh": "open3d/core/nns/kernel/BlockSelectImpl_hip.cuh",
+        "open3d/core/nns/kernel/BlockSelect.cuh": "open3d/core/nns/kernel/BlockSelect_hip.cuh",
+        "open3d/core/nns/kernel/DistancesUtils.cuh": "open3d/core/nns/kernel/DistancesUtils_hip.cuh",
+        "open3d/core/nns/kernel/L2Select.cuh": "open3d/core/nns/kernel/L2Select_hip.cuh",
+        "open3d/core/nns/KnnSearchImpl.cuh": "open3d/core/nns/KnnSearchImpl_hip.cuh"
+    }
+}

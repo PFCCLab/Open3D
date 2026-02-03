@@ -31,7 +31,11 @@
 
 #pragma once
 
+#if __HIP_PLATFORM_AMD__
+#include <hip/hip_runtime.h>
+#else
 #include <cuda.h>
+#endif
 
 #include "open3d/core/nns/kernel/Limits.cuh"
 #include "open3d/core/nns/kernel/Pair.cuh"

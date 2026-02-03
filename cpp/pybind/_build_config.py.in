@@ -18,5 +18,6 @@ _build_config = {
     "Tensorflow_VERSION" : "@Tensorflow_VERSION@",
     "Pytorch_VERSION" : "@Pytorch_VERSION@",
     "Paddle_VERSION" : "@Paddle_VERSION@",
-    "WITH_OPENMP" : $<IF:$<BOOL:@WITH_OPENMP@>,True,False>
+    "WITH_OPENMP" : $<IF:$<BOOL:@WITH_OPENMP@>,True,False>,
+    "WITH_ROCM" : $<IF:$<BOOL:@WITH_ROCM@>,True,False>
 }

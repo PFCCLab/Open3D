@@ -47,6 +47,7 @@ option(BUILD_UNIT_TESTS           "Build Open3D unit tests"                  OFF
 option(BUILD_BENCHMARKS           "Build the micro benchmarks"               OFF)
 option(BUILD_PYTHON_MODULE        "Build the python module"                  ON )
 option(BUILD_CUDA_MODULE          "Build the CUDA module"                    OFF)
+option(WITH_ROCM                    "Use ROCM to replace CUDA"                  OFF)
 option(BUILD_COMMON_CUDA_ARCHS    "Build for common CUDA GPUs (for release)" OFF)
 if (WIN32)   # Causes CUDA runtime error on Windows (See issue #6555)
     option(ENABLE_CACHED_CUDA_MANAGER "Enable cached CUDA memory manager"    OFF)
@@ -115,6 +116,7 @@ option(USE_SYSTEM_TINYGLTF        "Use system pre-installed tinygltf"        OFF
 option(USE_SYSTEM_TINYOBJLOADER   "Use system pre-installed tinyobjloader"   OFF)
 option(USE_SYSTEM_VTK             "Use system pre-installed VTK"             OFF)
 option(USE_SYSTEM_ZEROMQ          "Use system pre-installed ZeroMQ"          OFF)
+option(USE_SYSTEM_GLOG            "Use system pre-installed GLOG"            OFF)
 if(LINUX_AARCH64 OR APPLE_AARCH64)
     option(BUILD_VTK_FROM_SOURCE      "Build VTK from source"                ON )
     option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"           ON )
@@ -296,6 +298,25 @@ if(BUILD_SYCL_MODULE AND BUILD_CUDA_MODULE)
     message(FATAL_ERROR "BUILD_SYCL_MODULE and BUILD_SYCL_MODULE cannot be on at the same time for now.")
 endif()
 
+# Check ROCM compatiblility
+if (WITH_ROCM)
+    # Find ROCM path
+    set(ROCM_PATH $ENV{ROCM_PATH})
+    if (NOT ROCM_PATH)
+        message(FATAL_ERROR "ROCM_PATH is not set")
+    endif()
+
+    # Reuse BUILD_CUDA_MODULE variables for ROCM build
+    if (NOT BUILD_CUDA_MODULE)
+        message(FATAL_ERROR "WITH_ROCM requires BUILD_CUDA_MODULE=ON")
+    endif()
+
+    # Check DL framework compatibility
+    if (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS)
+        message(FATAL_ERROR "WITH_ROCM only available on Paddle backend.")
+    endif()
+endif()
+
 # Global flag to set CXX standard.
 # This does not affect 3rd party libraries.
 # Tensorflow 2.9+ requires cxx_17, but MSVC 19.29 throws errors with C++17
@@ -402,19 +423,34 @@ macro(open3d_patch_findthreads_module_)
 endmacro()
 cmake_language(EVAL CODE "cmake_language(DEFER CALL open3d_patch_findthreads_module_)")
 
-# Build CUDA module by default if CUDA is available
-if(BUILD_CUDA_MODULE)
-    include(Open3DMakeCudaArchitectures)
-    open3d_make_cuda_architectures(CUDA_ARCHS)
-    set(CMAKE_CUDA_ARCHITECTURES ${CUDA_ARCHS})
+if (BUILD_CUDA_MODULE)
+    if (WITH_ROCM)
+        # Build ROCM module
+        include(Open3DMakeRocmArchitectures)
+        open3d_make_rocm_architectures(ROCM_ARCHS)
+        set(CMAKE_HIP_ARCHITECTURES ${ROCM_ARCHS})
 
-    message(STATUS "Using CUDA architectures: ${CMAKE_CUDA_ARCHITECTURES}")
-    enable_language(CUDA)
-    set(CMAKE_CUDA_STANDARD 17)
-    if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA" AND CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "11.5")
-        message(FATAL_ERROR "CUDA 11.4 and older are not supported. Please upgrade to CUDA 11.5 or newer.")
+        message(STATUS "Using ROCM architectures: ${ROCM_ARCHS}")
+        enable_language(HIP)
+
+        # Disable interprocedural optimization for ROCM to avoid LLVMgold.so not found error
+        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
+    else ()
+        set(WITH_CUDA ON)
+        
+        # Build CUDA module by default if CUDA is available
+        include(Open3DMakeCudaArchitectures)
+        open3d_make_cuda_architectures(CUDA_ARCHS)
+        set(CMAKE_CUDA_ARCHITECTURES ${CUDA_ARCHS})
+
+        message(STATUS "Using CUDA architectures: ${CMAKE_CUDA_ARCHITECTURES}")
+        enable_language(CUDA)
+        set(CMAKE_CUDA_STANDARD 17)
+        if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA" AND CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "11.5")
+            message(FATAL_ERROR "CUDA 11.4 and older are not supported. Please upgrade to CUDA 11.5 or newer.")
+        endif()
     endif()
-endif ()
+endif()
 
 # ISPC language emulation support
 include(Open3DISPC)

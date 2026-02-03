@@ -157,7 +157,7 @@ struct BlockSelect {
     __device__ inline void checkThreadQ() {
         bool needSort = (numVals == NumThreadQ);
 
-#if CUDA_VERSION >= 9000
+#if CUDA_VERSION >= 9000 || !__HIP_PLATFORM_AMD__
         needSort = __any_sync(0xffffffff, needSort);
 #else
         needSort = __any(needSort);
@@ -421,7 +421,7 @@ struct WarpSelect {
     __device__ inline void checkThreadQ() {
         bool needSort = (numVals == NumThreadQ);
 
-#if CUDA_VERSION >= 9000
+#if CUDA_VERSION >= 9000 || !__HIP_PLATFORM_AMD__
         needSort = __any_sync(0xffffffff, needSort);
 #else
         needSort = __any(needSort);

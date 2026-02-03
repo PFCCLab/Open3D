@@ -20,8 +20,15 @@ if(NOT Paddle_FOUND)
     endif()
 
     if(BUILD_CUDA_MODULE)
-        find_package(CUDAToolkit REQUIRED)
-        string(SUBSTRING ${CUDAToolkit_VERSION} 0 4 CUDA_VERSION)
+        if (WITH_CUDA)
+            find_package(CUDAToolkit REQUIRED)
+            string(SUBSTRING ${CUDAToolkit_VERSION} 0 4 CUDA_VERSION)
+        elseif(WITH_ROCM)
+            find_package(HIP REQUIRED)
+            # Reuse CUDAToolkit variables for HIP
+            set(CUDAToolkit_INCLUDE_DIRS ${ROCM_PATH}/include)
+            set(CUDAToolkit_LIBRARY_DIR ${ROCM_PATH}/lib)
+        endif()
     endif()
 
     message(STATUS "Getting Paddle properties ...")
@@ -81,14 +88,20 @@ if(NOT Paddle_FOUND)
     list(APPEND PADDLE_LIBRARY_DIRS "${PADDLE_LIB}")
 
     if(BUILD_CUDA_MODULE)
-        find_library(CUDART_LIB NAMES cudart PATHS "${CUDAToolkit_LIBRARY_DIR}")
-        list(APPEND PADDLE_LIBRARY_DIRS "${CUDART_LIB}")
+        if (WITH_CUDA)
+            find_library(CUDART_LIB NAMES cudart PATHS "${CUDAToolkit_LIBRARY_DIR}")
+            list(APPEND PADDLE_LIBRARY_DIRS "${CUDART_LIB}")
+        endif()
     endif()
 
     # handle compile flags
     set(PADDLE_CXX_FLAGS)
     if(BUILD_CUDA_MODULE)
-        set(PADDLE_CXX_FLAGS "-DPADDLE_WITH_CUDA ${PADDLE_CXX_FLAGS}")
+        if (WITH_CUDA)
+            set(PADDLE_CXX_FLAGS -DPADDLE_WITH_CUDA ${PADDLE_CXX_FLAGS})
+        elseif(WITH_ROCM)
+            set(PADDLE_CXX_FLAGS -DPADDLE_WITH_HIP -DPADDLE_WITH_CUSTOM_KERNEL ${PADDLE_CXX_FLAGS})
+        endif()
     endif()
 
     set_target_properties(paddle PROPERTIES

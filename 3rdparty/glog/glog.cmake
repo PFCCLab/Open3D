@@ -1,0 +1,47 @@
+include(ExternalProject)
+
+set(GLOG_LIB_NAME glog)
+
+add_definitions(-DGLOG_NO_ABBREVIATED_SEVERITIES)
+
+# For CMake >= 4.0.0, set policy compatibility for glog's CMake.
+set(GLOG_POLICY_ARGS "")
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "4.0.0")
+  message(
+    WARNING
+      "glog: forcing CMake policy compatibility for CMake >= 4.0 (CMAKE_POLICY_VERSION_MINIMUM=3.5)"
+  )
+  set(GLOG_POLICY_ARGS "-DCMAKE_POLICY_VERSION_MINIMUM=3.5")
+endif()
+
+
+ExternalProject_Add(
+  ext_glog
+  PREFIX glog
+  URL https://github.com/google/glog/archive/refs/tags/v0.4.0.tar.gz
+  URL_HASH SHA256=f28359aeba12f30d73d9e4711ef356dc842886968112162bc73002645139c39c
+  DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/glog"
+  UPDATE_COMMAND ""
+  CMAKE_ARGS -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+             -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+             -DCMAKE_CXX_FLAGS=${GLOG_CMAKE_CXX_FLAGS}
+             -DCMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE}
+             -DCMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}
+             -DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}
+             -DCMAKE_C_FLAGS_DEBUG=${CMAKE_C_FLAGS_DEBUG}
+             -DCMAKE_C_FLAGS_RELEASE=${CMAKE_C_FLAGS_RELEASE}
+             ${GLOG_POLICY_ARGS}
+             -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+             -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+             -DWITH_GFLAGS=OFF
+             -DBUILD_TESTING=OFF
+             -DCMAKE_BUILD_TYPE=${THIRD_PARTY_BUILD_TYPE}
+             ${EXTERNAL_OPTIONAL_ARGS}
+  BUILD_BYPRODUCTS
+    <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${GLOG_LIB_NAME}${CMAKE_STATIC_LIBRARY_SUFFIX}
+)
+
+ExternalProject_Get_Property(ext_glog INSTALL_DIR)
+set(GLOG_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
+set(GLOG_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
+set(GLOG_LIBRARIES ${GLOG_LIB_NAME})

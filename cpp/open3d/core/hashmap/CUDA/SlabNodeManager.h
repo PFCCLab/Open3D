@@ -233,18 +233,34 @@ public:
     ~SlabNodeManager() { MemoryManager::Free(impl_.super_blocks_, device_); }
 
     void Reset() {
+#if __HIP_PLATFORM_AMD__
+        OPEN3D_CUDA_CHECK(hipMemset(
+                impl_.super_blocks_, 0xFF,
+                kUIntsPerSuperBlock * kSuperBlocks * sizeof(uint32_t)));
+#else
         OPEN3D_CUDA_CHECK(cudaMemset(
                 impl_.super_blocks_, 0xFF,
                 kUIntsPerSuperBlock * kSuperBlocks * sizeof(uint32_t)));
+#endif
 
         for (uint32_t i = 0; i < kSuperBlocks; i++) {
             // setting bitmaps into zeros:
+#if __HIP_PLATFORM_AMD__
+            OPEN3D_CUDA_CHECK(hipMemset(
+                    impl_.super_blocks_ + i * kUIntsPerSuperBlock, 0x00,
+                    kBlocksPerSuperBlock * kSlabsPerBlock * sizeof(uint32_t)));
+#else
             OPEN3D_CUDA_CHECK(cudaMemset(
                     impl_.super_blocks_ + i * kUIntsPerSuperBlock, 0x00,
                     kBlocksPerSuperBlock * kSlabsPerBlock * sizeof(uint32_t)));
+#endif
         }
         cuda::Synchronize();
+#if __HIP_PLATFORM_AMD__
+        OPEN3D_CUDA_CHECK(hipGetLastError());
+#else
         OPEN3D_CUDA_CHECK(cudaGetLastError());
+#endif
     }
 
     std::vector<int> CountSlabsPerSuperblock() {
@@ -262,7 +278,11 @@ public:
                                         core::cuda::GetStream()>>>(
                 impl_, thrust::raw_pointer_cast(slabs_per_superblock.data()));
         cuda::Synchronize();
+#if __HIP_PLATFORM_AMD__
+        OPEN3D_CUDA_CHECK(hipGetLastError());
+#else
         OPEN3D_CUDA_CHECK(cudaGetLastError());
+#endif
 
         std::vector<int> result(num_super_blocks);
         thrust::copy(slabs_per_superblock.begin(), slabs_per_superblock.end(),

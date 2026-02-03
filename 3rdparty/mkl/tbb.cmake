@@ -23,6 +23,11 @@ set(STATIC_TBB_LIBRARIES tbb_static tbbmalloc_static)
 
 find_package(Git QUIET REQUIRED)
 
+if (WITH_ROCM)
+    # NOTE(beinggod): Set CMAKE_CXX_COMPILER_ID to GNU to avoid link libunwind and libc++.
+    set(ExternalProject_CMAKE_ARGS_hidden "${ExternalProject_CMAKE_ARGS_hidden} -DCMAKE_CXX_COMPILER_ID=GNU")
+endif()
+
 ExternalProject_Add(
     ext_tbb
     PREFIX tbb
