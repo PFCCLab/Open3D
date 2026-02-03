@@ -19,7 +19,7 @@ pytestmark = mltest.default_marks
 @mltest.parametrize.ml_gpu_only
 def test_cublas_matmul(ml):
     # This test checks if calling cublas functionality from open3d and the ml framework works.
-    os.environ["NVIDIA_TF32_OVERRIDE"] = 0
+    os.environ["NVIDIA_TF32_OVERRIDE"] = "0"
 
     rng = np.random.RandomState(123)
 
