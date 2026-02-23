@@ -1240,6 +1240,10 @@ if(BUILD_GUI)
                 # If the default version is not sufficient, look for some specific versions
                 if(NOT FILAMENT_C_COMPILER OR NOT FILAMENT_CXX_COMPILER)
                     find_program(CLANG_VERSIONED_CC NAMES
+                                 clang-19
+                                 clang-18
+                                 clang-17
+                                 clang-16
                                  clang-15
                                  clang-14
                                  clang-13
@@ -1251,6 +1255,10 @@ if(BUILD_GUI)
                                  clang-7
                     )
                     find_program(CLANG_VERSIONED_CXX NAMES
+                                 clang++-19
+                                 clang++-18
+                                 clang++-17
+                                 clang++-16
                                  clang++-15
                                  clang++-14
                                  clang++-13
@@ -1278,7 +1286,7 @@ if(BUILD_GUI)
                 #
                 # On aarch64, the symbolic link path may not work for CMake's
                 # find_library. Therefore, when compiling Filament from source,
-                # we explicitly find the corresponidng path based on the clang
+                # we explicitly find the corresponding path based on the clang
                 # version.
                 execute_process(COMMAND ${FILAMENT_CXX_COMPILER} --version OUTPUT_VARIABLE clang_version)
                 if(clang_version MATCHES "clang version ([0-9]+)")
@@ -1289,21 +1297,24 @@ if(BUILD_GUI)
         else()
             message(STATUS "Using prebuilt third-party library Filament")
             include(${Open3D_3RDPARTY_DIR}/filament/filament_download.cmake)
-            # Set lib directory for filament v1.9.9 on Windows.
-            # Assume newer version if FILAMENT_PRECOMPILED_ROOT is set.
-            if (WIN32 AND NOT FILAMENT_PRECOMPILED_ROOT)
-                if (STATIC_WINDOWS_RUNTIME)
-                    set(FILAMENT_RUNTIME_VER "x86_64/mt$<$<CONFIG:DEBUG>:d>")
-                else()
-                    set(FILAMENT_RUNTIME_VER "x86_64/md$<$<CONFIG:DEBUG>:d>")
-                endif()
-            endif()
         endif()
-        if (APPLE)
+        if (UNIX AND NOT APPLE)
+            if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$")
+                set(FILAMENT_RUNTIME_VER aarch64)
+            else()
+                set(FILAMENT_RUNTIME_VER x86_64)
+            endif()
+        elseif (APPLE)
             if (APPLE_AARCH64)
                 set(FILAMENT_RUNTIME_VER arm64)
             else()
                 set(FILAMENT_RUNTIME_VER x86_64)
+            endif()
+        else()  # WIN32
+            if (STATIC_WINDOWS_RUNTIME)
+                set(FILAMENT_RUNTIME_VER "x86_64/mt$<$<CONFIG:DEBUG>:d>")
+            else()
+                set(FILAMENT_RUNTIME_VER "x86_64/md$<$<CONFIG:DEBUG>:d>")
             endif()
         endif()
         open3d_import_3rdparty_library(3rdparty_filament
@@ -1320,24 +1331,15 @@ if(BUILD_GUI)
             # We first search for these paths, and then search CMake's default
             # search path. LLVM version must be >= 7 to compile Filament.
             if (NOT CLANG_LIBDIR)
-                set(ubuntu_default_llvm_lib_dirs
-                    /usr/lib/llvm-15/lib
-                    /usr/lib/llvm-14/lib
-                    /usr/lib/llvm-13/lib
-                    /usr/lib/llvm-12/lib
-                    /usr/lib/llvm-11/lib
-                    /usr/lib/llvm-10/lib
-                    /usr/lib/llvm-9/lib
-                    /usr/lib/llvm-8/lib
-                    /usr/lib/llvm-7/lib
-                )
-                foreach(llvm_lib_dir in ${ubuntu_default_llvm_lib_dirs})
-                    message(STATUS "Searching ${llvm_lib_dir} for libc++ and libc++abi")
-                    find_library(CPP_LIBRARY    c++    PATHS ${llvm_lib_dir} NO_DEFAULT_PATH)
+                message(STATUS "Searching /usr/lib/llvm-[7..19]/lib/ for libc++ and libc++abi")
+                foreach(llvm_ver RANGE 7 19)
+                    set(llvm_lib_dir "/usr/lib/llvm-${llvm_ver}/lib")
+                    find_library(CPP_LIBRARY    c++ PATHS ${llvm_lib_dir} NO_DEFAULT_PATH)
                     find_library(CPPABI_LIBRARY c++abi PATHS ${llvm_lib_dir} NO_DEFAULT_PATH)
                     if (CPP_LIBRARY AND CPPABI_LIBRARY)
                         set(CLANG_LIBDIR ${llvm_lib_dir})
                         message(STATUS "CLANG_LIBDIR found in ubuntu-default: ${CLANG_LIBDIR}")
+                        set(LIBCPP_VERSION ${llvm_ver})
                         break()
                     endif()
                 endforeach()
@@ -1346,7 +1348,12 @@ if(BUILD_GUI)
             # Fallback to non-ubuntu-default paths. Note that the PATH_SUFFIXES
             # is not enforced by CMake.
             if (NOT CLANG_LIBDIR)
+                message(STATUS "Clang C++ libraries not found. Searching other paths...")
                 find_library(CPPABI_LIBRARY c++abi PATH_SUFFIXES
+                             llvm-19/lib
+                             llvm-18/lib
+                             llvm-17/lib
+                             llvm-16/lib
                              llvm-15/lib
                              llvm-14/lib
                              llvm-13/lib
@@ -1357,7 +1364,10 @@ if(BUILD_GUI)
                              llvm-8/lib
                              llvm-7/lib
                 )
+                file(REAL_PATH ${CPPABI_LIBRARY} CPPABI_LIBRARY)
                 get_filename_component(CLANG_LIBDIR ${CPPABI_LIBRARY} DIRECTORY)
+                string(REGEX MATCH "llvm-([0-9]+)/lib" _ ${CLANG_LIBDIR})
+                set(LIBCPP_VERSION ${CMAKE_MATCH_1})
             endif()
 
             # Find clang libraries at the exact path ${CLANG_LIBDIR}.
@@ -1371,9 +1381,13 @@ if(BUILD_GUI)
 
             # Ensure that libstdc++ gets linked first.
             target_link_libraries(3rdparty_filament INTERFACE -lstdc++
-                                  ${CPP_LIBRARY} ${CPPABI_LIBRARY})
-            message(STATUS "CPP_LIBRARY: ${CPP_LIBRARY}")
-            message(STATUS "CPPABI_LIBRARY: ${CPPABI_LIBRARY}")
+                                  ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY})
+            message(STATUS "Filament C++ libraries: ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY}")
+            if (LIBCPP_VERSION GREATER 11)
+                message(WARNING "libc++ (LLVM) version ${LIBCPP_VERSION} > 11 includes libunwind that "
+                "interferes with the system libunwind.so.8 and may crash Python code when exceptions "
+                "are used. Please consider using libc++ (LLVM) v11.")
+            endif()
         endif()
         if (APPLE)
             find_library(CORE_VIDEO CoreVideo)
