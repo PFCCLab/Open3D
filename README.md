@@ -58,6 +58,7 @@ cmake  -DCMAKE_CUDA_HOST_COMPILER=/usr/bin/gcc-9 \
        -DGLIBCXX_USE_CXX11_ABI=ON \
        -DBUNDLE_OPEN3D_ML=OFF \
        -DPython_EXECUTABLE=$(which python) \
+       -DBUILD_GUI=OFF \
        ..
 
 # or Build on release (support CUDA archs: Pascal, Volta, Turing and Ampere.)
@@ -71,6 +72,7 @@ cmake  -DCMAKE_CUDA_HOST_COMPILER=/usr/bin/gcc-9 \
        -DGLIBCXX_USE_CXX11_ABI=ON \
        -DBUNDLE_OPEN3D_ML=OFF \
        -DPython_EXECUTABLE=$(which python) \
+       -DBUILD_GUI=OFF \
        ..
 
 # install whl
