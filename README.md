@@ -108,6 +108,7 @@ cmake  -DCMAKE_C_COMPILER=/usr/bin/clang \
        -DGLIBCXX_USE_CXX11_ABI=ON \
        -DBUNDLE_OPEN3D_ML=OFF \
        -DPython_EXECUTABLE=$(which python) \
+       -DBUILD_GUI=OFF \
        ..
 
 # or Build on release (support ROCm archs: gfx906, gfx926, gfx928 and gfx936.)
@@ -121,6 +122,7 @@ cmake  -DCMAKE_C_COMPILER=/usr/bin/clang \
        -DGLIBCXX_USE_CXX11_ABI=ON \
        -DBUNDLE_OPEN3D_ML=OFF \
        -DPython_EXECUTABLE=$(which python) \
+       -DBUILD_GUI=OFF \
        ..
 
 # install whl
