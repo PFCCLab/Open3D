@@ -18,8 +18,12 @@
 
 #ifdef BUILD_CUDA_MODULE
 
+#if __HIP_PLATFORM_AMD__
+#include <hip/hip_runtime.h>
+#else
 #include <cuda.h>
 #include <cuda_runtime.h>
+#endif
 
 #include <memory>
 #include <vector>
@@ -29,9 +33,19 @@
 #define OPEN3D_FORCE_INLINE __forceinline__
 #define OPEN3D_HOST_DEVICE __host__ __device__
 #define OPEN3D_DEVICE __device__
+
+#if __HIP_PLATFORM_AMD__
+// NOTE: clang++ not support __nv_is_extended_host_device_lambda_closure_type.
+// It will throw error in compile time so static_assert should be set to true
+// always.
+#define OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(type) \
+    static_assert(true, #type " must be a __host__ __device__ lambda")
+#else
 #define OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(type)                            \
     static_assert(__nv_is_extended_host_device_lambda_closure_type(type), \
                   #type " must be a __host__ __device__ lambda")
+#endif
+
 #define OPEN3D_CUDA_CHECK(err) \
     open3d::core::__OPEN3D_CUDA_CHECK(err, __FILE__, __LINE__)
 #define OPEN3D_GET_LAST_CUDA_ERROR(message) \
@@ -148,7 +162,11 @@ public:
 
     explicit CUDAScopedStream(const CreateNewStreamTag&);
 
+#if __HIP_PLATFORM_AMD__
+    explicit CUDAScopedStream(hipStream_t stream);
+#else
     explicit CUDAScopedStream(cudaStream_t stream);
+#endif
 
     ~CUDAScopedStream();
 
@@ -156,8 +174,13 @@ public:
     CUDAScopedStream& operator=(const CUDAScopedStream&) = delete;
 
 private:
+#if __HIP_PLATFORM_AMD__
+    hipStream_t prev_stream_;
+    hipStream_t new_stream_;
+#else
     cudaStream_t prev_stream_;
     cudaStream_t new_stream_;
+#endif
     bool owns_new_stream_ = false;
 };
 
@@ -265,8 +288,13 @@ bool SupportsMemoryPools(const Device& device);
 #ifdef BUILD_CUDA_MODULE
 
 int GetDevice();
+#if __HIP_PLATFORM_AMD__
+hipStream_t GetStream();
+hipStream_t GetDefaultStream();
+#else
 cudaStream_t GetStream();
 cudaStream_t GetDefaultStream();
+#endif
 
 #endif
 
@@ -280,7 +308,11 @@ cudaStream_t GetDefaultStream();
 namespace open3d {
 namespace core {
 
+#if __HIP_PLATFORM_AMD__
+void __OPEN3D_CUDA_CHECK(hipError_t err, const char* file, const int line);
+#else
 void __OPEN3D_CUDA_CHECK(cudaError_t err, const char* file, const int line);
+#endif
 
 void __OPEN3D_GET_LAST_CUDA_ERROR(const char* message,
                                   const char* file,
@@ -289,4 +321,17 @@ void __OPEN3D_GET_LAST_CUDA_ERROR(const char* message,
 }  // namespace core
 }  // namespace open3d
 
+#endif
+
+#ifdef BUILD_CUDA_MODULE
+#if __HIP_PLATFORM_AMD__
+
+// NOTE(beinggod): Ignore the mask for ROCm.
+#define __shfl_sync(mask, ...) __shfl(__VA_ARGS__)
+#define __shfl_down_sync(mask, ...) __shfl_down(__VA_ARGS__)
+#define __ballot_sync(mask, ...) __ballot(__VA_ARGS__)
+// warp size is 64 for ROCm.
+#define __activemask() 0xffffffffffffffff
+
+#endif
 #endif

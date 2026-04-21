@@ -13,7 +13,7 @@ namespace open3d {
 namespace t {
 namespace pipelines {
 namespace kernel {
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void FillInRigidAlignmentTermCUDA
 #else
 void FillInRigidAlignmentTermCPU
@@ -127,7 +127,7 @@ void FillInRigidAlignmentTermCPU
     Atb.IndexSet({indices}, Atb_sub + Atb_local.View({12, 1}));
 }
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void FillInSLACAlignmentTermCUDA
 #else
 void FillInSLACAlignmentTermCPU
@@ -247,7 +247,7 @@ void FillInSLACAlignmentTermCPU
                 }
 
         // Not optimized; Switch to reduction if necessary.
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
                 for (int ki = 0; ki < 60; ++ki) {
                     for (int kj = 0; kj < 60; ++kj) {
                         float AtA_ij = J[ki] * J[kj];
@@ -274,7 +274,7 @@ void FillInSLACAlignmentTermCPU
             });
 }
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void FillInSLACRegularizerTermCUDA
 #else
 void FillInSLACRegularizerTermCPU
@@ -413,7 +413,7 @@ void FillInSLACRegularizerTermCPU
                         int offset_idx_i = 3 * idx_i + 6 * n_frags;
                         int offset_idx_k = 3 * idx_k + 6 * n_frags;
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
                         // Update residual
                         atomicAdd(residual_ptr,
                                   weight * (local_r[0] * local_r[0] +

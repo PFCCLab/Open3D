@@ -31,13 +31,17 @@
 
 #pragma once
 
+#if __HIP_PLATFORM_AMD__
+#include <hip/hip_runtime.h>
+#else
 #include <cuda.h>
+#endif
 
 namespace open3d {
 namespace core {
 
 // We require at least CUDA 8.0 for compilation
-#if CUDA_VERSION < 8000
+#if !__HIP_PLATFORM_AMD__ && (CUDA_VERSION < 8000)
 #error "CUDA >= 8.0 is required"
 #endif
 
@@ -46,7 +50,9 @@ constexpr int kWarpSize = 32;
 
 // This is a memory barrier for intra-warp writes to shared memory.
 __forceinline__ __device__ void warpFence() {
-#if CUDA_VERSION >= 9000
+#if __HIP_PLATFORM_AMD__
+    __builtin_amdgcn_wave_barrier();
+#elif (CUDA_VERSION >= 9000)
     __syncwarp();
 #else
     // For the time being, assume synchronicity.
@@ -54,7 +60,7 @@ __forceinline__ __device__ void warpFence() {
 #endif
 }
 
-#if CUDA_VERSION > 9000
+#if (CUDA_VERSION > 9000) || __HIP_PLATFORM_AMD__
 // Based on the CUDA version (we assume what version of nvcc/ptxas we were
 // compiled with), the register allocation algorithm is much better, so only
 // enable the 2048 selection code if we are above 9.0 (9.2 seems to be ok)

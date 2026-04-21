@@ -87,6 +87,15 @@ function(open3d_set_global_properties target)
     # Propagate build configuration into source code
     if (BUILD_CUDA_MODULE)
         target_compile_definitions(${target} PRIVATE BUILD_CUDA_MODULE)
+        # Add WITH_ROCM definitions and build options for ROCM build
+        if (WITH_ROCM)
+            # Add definitions for ROCM build
+            list(APPEND HIP_COMPILE_DEFINITIONS __HIP_PLATFORM_AMD__=1)
+            list(APPEND HIP_COMPILE_DEFINITIONS ROCM_NO_WRAPPER_HEADER_WARNING)
+            list(APPEND HIP_COMPILE_DEFINITIONS THRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_HIP)
+
+            target_compile_definitions(${target} PRIVATE ${HIP_COMPILE_DEFINITIONS}) 
+        endif()
         if (ENABLE_CACHED_CUDA_MANAGER)
             target_compile_definitions(${target} PRIVATE ENABLE_CACHED_CUDA_MANAGER)
         endif()

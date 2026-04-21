@@ -97,16 +97,28 @@ void SlabHashBackend<Key, Hash, Eq>::Find(const void* input_keys,
     CUDAScopedDevice scoped_device(this->device_);
     if (count == 0) return;
 
+#if __HIP_PLATFORM_AMD__
+    OPEN3D_CUDA_CHECK(hipMemset(output_masks, 0, sizeof(bool) * count));
+#else
     OPEN3D_CUDA_CHECK(cudaMemset(output_masks, 0, sizeof(bool) * count));
+#endif
     cuda::Synchronize();
+#if __HIP_PLATFORM_AMD__
+    OPEN3D_CUDA_CHECK(hipGetLastError());
+#else
     OPEN3D_CUDA_CHECK(cudaGetLastError());
+#endif
 
     const int64_t num_blocks =
             (count + kThreadsPerBlock - 1) / kThreadsPerBlock;
     FindKernel<<<num_blocks, kThreadsPerBlock, 0, core::cuda::GetStream()>>>(
             impl_, input_keys, output_buf_indices, output_masks, count);
     cuda::Synchronize();
+#if __HIP_PLATFORM_AMD__
+    OPEN3D_CUDA_CHECK(hipGetLastError());
+#else
     OPEN3D_CUDA_CHECK(cudaGetLastError());
+#endif
 }
 
 template <typename Key, typename Hash, typename Eq>
@@ -116,9 +128,17 @@ void SlabHashBackend<Key, Hash, Eq>::Erase(const void* input_keys,
     CUDAScopedDevice scoped_device(this->device_);
     if (count == 0) return;
 
+#if __HIP_PLATFORM_AMD__
+    OPEN3D_CUDA_CHECK(hipMemset(output_masks, 0, sizeof(bool) * count));
+#else
     OPEN3D_CUDA_CHECK(cudaMemset(output_masks, 0, sizeof(bool) * count));
+#endif
     cuda::Synchronize();
+#if __HIP_PLATFORM_AMD__
+    OPEN3D_CUDA_CHECK(hipGetLastError());
+#else
     OPEN3D_CUDA_CHECK(cudaGetLastError());
+#endif
     auto buf_indices = static_cast<buf_index_t*>(
             MemoryManager::Malloc(sizeof(buf_index_t) * count, this->device_));
 
@@ -131,7 +151,11 @@ void SlabHashBackend<Key, Hash, Eq>::Erase(const void* input_keys,
                        core::cuda::GetStream()>>>(impl_, buf_indices,
                                                   output_masks, count);
     cuda::Synchronize();
+#if __HIP_PLATFORM_AMD__
+    OPEN3D_CUDA_CHECK(hipGetLastError());
+#else
     OPEN3D_CUDA_CHECK(cudaGetLastError());
+#endif
 
     MemoryManager::Free(buf_indices, this->device_);
 }
@@ -142,10 +166,18 @@ int64_t SlabHashBackend<Key, Hash, Eq>::GetActiveIndices(
     CUDAScopedDevice scoped_device(this->device_);
     uint32_t* count = static_cast<uint32_t*>(
             MemoryManager::Malloc(sizeof(uint32_t), this->device_));
+#if __HIP_PLATFORM_AMD__
+    OPEN3D_CUDA_CHECK(hipMemset(count, 0, sizeof(uint32_t)));
+#else
     OPEN3D_CUDA_CHECK(cudaMemset(count, 0, sizeof(uint32_t)));
+#endif
 
     cuda::Synchronize();
+#if __HIP_PLATFORM_AMD__
+    OPEN3D_CUDA_CHECK(hipGetLastError());
+#else
     OPEN3D_CUDA_CHECK(cudaGetLastError());
+#endif
 
     const int64_t num_blocks =
             (impl_.bucket_count_ * kWarpSize + kThreadsPerBlock - 1) /
@@ -154,7 +186,11 @@ int64_t SlabHashBackend<Key, Hash, Eq>::GetActiveIndices(
                              core::cuda::GetStream()>>>(
             impl_, output_buf_indices, count);
     cuda::Synchronize();
+#if __HIP_PLATFORM_AMD__
+    OPEN3D_CUDA_CHECK(hipGetLastError());
+#else
     OPEN3D_CUDA_CHECK(cudaGetLastError());
+#endif
 
     uint32_t ret;
     MemoryManager::MemcpyToHost(&ret, count, this->device_, sizeof(uint32_t));
@@ -170,10 +206,19 @@ void SlabHashBackend<Key, Hash, Eq>::Clear() {
     this->buffer_->ResetHeap();
 
     // Clear the linked list heads
+#if __HIP_PLATFORM_AMD__
+    OPEN3D_CUDA_CHECK(hipMemset(impl_.bucket_list_head_, 0xFF,
+                                sizeof(Slab) * this->bucket_count_));
+#else
     OPEN3D_CUDA_CHECK(cudaMemset(impl_.bucket_list_head_, 0xFF,
                                  sizeof(Slab) * this->bucket_count_));
+#endif
     cuda::Synchronize();
+#if __HIP_PLATFORM_AMD__
+    OPEN3D_CUDA_CHECK(hipGetLastError());
+#else
     OPEN3D_CUDA_CHECK(cudaGetLastError());
+#endif
 
     // Clear the linked list nodes
     node_mgr_->Reset();
@@ -204,7 +249,11 @@ std::vector<int64_t> SlabHashBackend<Key, Hash, Eq>::BucketSizes() const {
                                 core::cuda::GetStream()>>>(
             impl_, thrust::raw_pointer_cast(elems_per_bucket.data()));
     cuda::Synchronize();
+#if __HIP_PLATFORM_AMD__
+    OPEN3D_CUDA_CHECK(hipGetLastError());
+#else
     OPEN3D_CUDA_CHECK(cudaGetLastError());
+#endif
 
     std::vector<int64_t> result(impl_.bucket_count_);
     thrust::copy(elems_per_bucket.begin(), elems_per_bucket.end(),
@@ -258,7 +307,11 @@ void SlabHashBackend<Key, Hash, Eq>::Insert(
                                 output_masks, count, n_values);
             });
     cuda::Synchronize();
+#if __HIP_PLATFORM_AMD__
+    OPEN3D_CUDA_CHECK(hipGetLastError());
+#else
     OPEN3D_CUDA_CHECK(cudaGetLastError());
+#endif
 }
 
 template <typename Key, typename Hash, typename Eq>
@@ -279,10 +332,20 @@ void SlabHashBackend<Key, Hash, Eq>::Allocate(int64_t capacity) {
     // Allocate linked list heads.
     impl_.bucket_list_head_ = static_cast<Slab*>(MemoryManager::Malloc(
             sizeof(Slab) * this->bucket_count_, this->device_));
+#if __HIP_PLATFORM_AMD__
+    OPEN3D_CUDA_CHECK(hipMemset(impl_.bucket_list_head_, 0xFF,
+                                sizeof(Slab) * this->bucket_count_));
+#else
     OPEN3D_CUDA_CHECK(cudaMemset(impl_.bucket_list_head_, 0xFF,
                                  sizeof(Slab) * this->bucket_count_));
     cuda::Synchronize();
+#endif
+
+#if __HIP_PLATFORM_AMD__
+    OPEN3D_CUDA_CHECK(hipGetLastError());
+#else
     OPEN3D_CUDA_CHECK(cudaGetLastError());
+#endif
 
     impl_.Setup(this->bucket_count_, node_mgr_->impl_, buffer_accessor_);
 }

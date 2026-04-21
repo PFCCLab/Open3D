@@ -52,6 +52,37 @@ configure_file("${PROJECT_SOURCE_DIR}/cpp/open3d/Open3D.h.in"
 configure_file("${PROJECT_SOURCE_DIR}/cpp/open3d/Open3DConfig.h.in"
                "${PROJECT_SOURCE_DIR}/cpp/open3d/Open3DConfig.h")
 
+# HIPify the source code
+if (WITH_ROCM)
+    include(Hipify)
+
+    set(HIPIFY_HEADER_INCLUDE_DIRS
+      ${CMAKE_CURRENT_SOURCE_DIR}/core
+      ${CMAKE_CURRENT_SOURCE_DIR}/core/kernel
+      ${CMAKE_CURRENT_SOURCE_DIR}/core/hashmap
+      ${CMAKE_CURRENT_SOURCE_DIR}/core/linalg
+      ${CMAKE_CURRENT_SOURCE_DIR}/core/linalg/kernel
+      ${CMAKE_CURRENT_SOURCE_DIR}/core/nns
+      ${CMAKE_CURRENT_SOURCE_DIR}/core/nns/kernel)
+
+    # Hipify the source code
+    hipify(CUDA_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR} 
+        HEADER_INCLUDE_DIRS ${HIPIFY_HEADER_INCLUDE_DIRS}
+        IGNORES "${PROJECT_SOURCE_DIR}/cpp/open3d/utility/*"
+        IGNORES "${PROJECT_SOURCE_DIR}/cpp/open3d/core/MemoryManager.h"
+        IGNORES "${PROJECT_SOURCE_DIR}/cpp/open3d/core/DLPack.h"
+        IGNORES "${PROJECT_SOURCE_DIR}/cpp/open3d/core/CUDAUtils*"
+        IGNORES "${PROJECT_SOURCE_DIR}/cpp/open3d/core/linalg/LinalgHeadersCUDA.h*"
+        IGNORES "${PROJECT_SOURCE_DIR}/cpp/open3d/core/nns/kernel/PtxUtils.cuh"
+        IGNORES "${PROJECT_SOURCE_DIR}/cpp/open3d/core/nns/kernel/DeviceDefs.cuh"
+        IGNORES "${PROJECT_SOURCE_DIR}/cpp/open3d/t/pipelines/kernel/RegistrationImpl.h"
+        IGNORES "${PROJECT_SOURCE_DIR}/cpp/open3d/core/hashmap/CUDA/*"
+        IGNORES "${PROJECT_SOURCE_DIR}/cpp/open3d/core/hashmap/Dispatch.h"
+        IGNORES "${PROJECT_SOURCE_DIR}/cpp/open3d/t/geometry/kernel/GeometryMacros.h"
+        CUSTOM_MAP_FILE "${PROJECT_SOURCE_DIR}/hipify_custom_map.json"
+        NO_MATH_REPLACE
+    )
+endif()
 
 add_library(Open3D)
 
@@ -135,6 +166,10 @@ open3d_link_3rdparty_libraries(Open3D)
 # direct consumers of libOpen3D.a
 target_link_options(Open3D INTERFACE
     $<$<STREQUAL:$<TARGET_PROPERTY:Open3D,TYPE>,STATIC_LIBRARY>:$<LINK_ONLY:${OPEN3D_HIDDEN_3RDPARTY_LINK_OPTIONS}>>)
+
+# get_target_property(SRCS Open3D SOURCES)
+# message(FATAL_ERROR "sources = ${SRCS}")
+
 
 add_library(Open3D::Open3D ALIAS Open3D)
 

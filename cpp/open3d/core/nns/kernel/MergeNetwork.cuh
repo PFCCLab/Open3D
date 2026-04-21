@@ -194,7 +194,7 @@ struct BitonicMergeStep<K, V, 1, Dir, Low, true> {
 
 template <typename K, typename V, int N, bool Dir, bool Low>
 struct BitonicMergeStep<K, V, N, Dir, Low, true> {
-    static inline __device__ void merge(K k[N], V v[N]) {
+    static inline __device__ void merge(K* k, V* v) {
         static_assert(isPowerOf2(N), "must be power of 2");
         static_assert(N > 1, "must be N > 1");
 
@@ -259,7 +259,7 @@ struct BitonicMergeStep<K, V, N, Dir, Low, true> {
 // Low recursion
 template <typename K, typename V, int N, bool Dir>
 struct BitonicMergeStep<K, V, N, Dir, true, false> {
-    static inline __device__ void merge(K k[N], V v[N]) {
+    static inline __device__ void merge(K* k, V* v) {
         static_assert(!isPowerOf2(N), "must be non-power-of-2");
         static_assert(N >= 3, "must be N >= 3");
 
@@ -337,7 +337,7 @@ struct BitonicMergeStep<K, V, N, Dir, true, false> {
 // High recursion
 template <typename K, typename V, int N, bool Dir>
 struct BitonicMergeStep<K, V, N, Dir, false, false> {
-    static inline __device__ void merge(K k[N], V v[N]) {
+    static inline __device__ void merge(K* k, V* v) {
         static_assert(!isPowerOf2(N), "must be non-power-of-2");
         static_assert(N >= 3, "must be N >= 3");
 
@@ -422,10 +422,7 @@ template <typename K,
           int N2,
           bool Dir,
           bool FullMerge = true>
-inline __device__ void warpMergeAnyRegisters(K k1[N1],
-                                             V v1[N1],
-                                             K k2[N2],
-                                             V v2[N2]) {
+inline __device__ void warpMergeAnyRegisters(K* k1, V* v1, K* k2, V* v2) {
     constexpr int kSmallestN = N1 < N2 ? N1 : N2;
 
 #pragma unroll
@@ -479,7 +476,7 @@ inline __device__ void warpMergeAnyRegisters(K k1[N1],
 // bitonic sort
 template <typename K, typename V, int N, bool Dir>
 struct BitonicSortStep {
-    static inline __device__ void sort(K k[N], V v[N]) {
+    static inline __device__ void sort(K* k, V* v) {
         static_assert(N > 1, "did not hit specialized case");
 
         // Sort recursively
@@ -544,7 +541,7 @@ struct BitonicSortStep<K, V, 1, Dir> {
 /// Sort a list of kWarpSize * N elements in registers, where N is an
 /// arbitrary >= 1
 template <typename K, typename V, int N, bool Dir>
-inline __device__ void warpSortAnyRegisters(K k[N], V v[N]) {
+inline __device__ void warpSortAnyRegisters(K* k, V* v) {
     BitonicSortStep<K, V, N, Dir>::sort(k, v);
 }
 

@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "PaddleHelper.h"
+#include "open3d/ml/paddle/PaddleHelper.h"
 
 paddle::Tensor InitializedEmptyTensor(const phi::DataType dtype,
                                       const phi::IntArray& shape,

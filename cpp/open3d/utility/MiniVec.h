@@ -11,6 +11,8 @@
 
 #ifdef __CUDACC__
 #define FN_SPECIFIERS inline __host__ __device__
+#elif __HIPCC__
+#define FN_SPECIFIERS inline __host__ __device__
 #else
 #define FN_SPECIFIERS inline
 #endif

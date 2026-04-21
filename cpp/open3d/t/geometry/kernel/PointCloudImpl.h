@@ -37,7 +37,7 @@ using std::min;
 using std::sqrt;
 #endif
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void UnprojectCUDA
 #else
 void UnprojectCPU
@@ -77,7 +77,7 @@ void UnprojectCPU
     }
 
     // Counter
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
     core::Tensor count(std::vector<int>{0}, {}, core::Int32, depth.GetDevice());
     int* count_ptr = count.GetDataPtr<int>();
 #else
@@ -119,13 +119,13 @@ void UnprojectCPU
                     }
                 });
     });
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
     int total_pts_count = count.Item<int>();
 #else
     int total_pts_count = (*count_ptr).load();
 #endif
 
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(__HIPCC__) || defined(__HIPCC__)
     core::cuda::Synchronize();
 #endif
     points = points.Slice(0, 0, total_pts_count);
@@ -135,7 +135,7 @@ void UnprojectCPU
     }
 }
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void GetPointMaskWithinAABBCUDA
 #else
 void GetPointMaskWithinAABBCPU
@@ -169,7 +169,7 @@ void GetPointMaskWithinAABBCPU
     });
 }
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void GetPointMaskWithinOBBCUDA
 #else
 void GetPointMaskWithinOBBCPU
@@ -213,7 +213,7 @@ void GetPointMaskWithinOBBCPU
     });
 }
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void NormalizeNormalsCUDA
 #else
 void NormalizeNormalsCPU
@@ -244,7 +244,7 @@ void NormalizeNormalsCPU
     });
 }
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void OrientNormalsToAlignWithDirectionCUDA
 #else
 void OrientNormalsToAlignWithDirectionCPU
@@ -278,7 +278,7 @@ void OrientNormalsToAlignWithDirectionCPU
     });
 }
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void OrientNormalsTowardsCameraLocationCUDA
 #else
 void OrientNormalsTowardsCameraLocationCPU
@@ -413,7 +413,7 @@ OPEN3D_HOST_DEVICE bool IsBoundaryPoints(const scalar_t* angles,
     return max_diff > angle_threshold * M_PI / 180.0 ? true : false;
 }
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void ComputeBoundaryPointsCUDA
 #else
 void ComputeBoundaryPointsCPU
@@ -554,7 +554,7 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseRobustNormalizedCovarianceKernel(
     covariance_ptr[7] = covariance_ptr[5];
 }
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void EstimateCovariancesUsingHybridSearchCUDA
 #else
 void EstimateCovariancesUsingHybridSearchCPU
@@ -604,7 +604,7 @@ void EstimateCovariancesUsingHybridSearchCPU
     core::cuda::Synchronize(points.GetDevice());
 }
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void EstimateCovariancesUsingRadiusSearchCUDA
 #else
 void EstimateCovariancesUsingRadiusSearchCPU
@@ -653,7 +653,7 @@ void EstimateCovariancesUsingRadiusSearchCPU
     core::cuda::Synchronize(points.GetDevice());
 }
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void EstimateCovariancesUsingKNNSearchCUDA
 #else
 void EstimateCovariancesUsingKNNSearchCPU
@@ -971,7 +971,7 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseNormalsWithFastEigen3x3(
     }
 }
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void EstimateNormalsFromCovariancesCUDA
 #else
 void EstimateNormalsFromCovariancesCPU
@@ -1125,7 +1125,7 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseColorGradientKernel(
     }
 }
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void EstimateColorGradientsUsingHybridSearchCUDA
 #else
 void EstimateColorGradientsUsingHybridSearchCPU
@@ -1177,7 +1177,7 @@ void EstimateColorGradientsUsingHybridSearchCPU
     core::cuda::Synchronize(points.GetDevice());
 }
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void EstimateColorGradientsUsingKNNSearchCUDA
 #else
 void EstimateColorGradientsUsingKNNSearchCPU
@@ -1232,7 +1232,7 @@ void EstimateColorGradientsUsingKNNSearchCPU
     core::cuda::Synchronize(points.GetDevice());
 }
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void EstimateColorGradientsUsingRadiusSearchCUDA
 #else
 void EstimateColorGradientsUsingRadiusSearchCPU

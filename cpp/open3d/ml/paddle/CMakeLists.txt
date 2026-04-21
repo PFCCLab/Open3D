@@ -102,6 +102,17 @@ if (BUILD_CUDA_MODULE)
     )
 endif()
 
+if (WITH_ROCM)
+    include(Hipify)
+
+    get_target_property(SOURCE_LIST open3d_paddle_ops SOURCES)
+    get_hipified_list("${SOURCE_LIST}" HIPIFIED_SOURCE_LIST)
+    # NOTE: Set language to HIP for source files to enforce using HIP_COMPILER instead of CXX_COMPILER
+    # to workaround _Float16 is not defined in CXX_COMPILER
+    set_source_files_properties(${HIPIFIED_SOURCE_LIST} PROPERTIES LANGUAGE HIP)
+    set_property(TARGET open3d_paddle_ops PROPERTY SOURCES ${HIPIFIED_SOURCE_LIST})
+endif()
+
 open3d_show_and_abort_on_warning(open3d_paddle_ops)
 open3d_set_global_properties(open3d_paddle_ops)
 
@@ -133,17 +144,31 @@ target_link_libraries(open3d_paddle_ops PRIVATE
 )
 
 if (BUILD_CUDA_MODULE)
-    target_link_libraries(open3d_paddle_ops PRIVATE
-        Open3D::3rdparty_cutlass
-        ${PADDLE_LIBRARIES}
-        CUDA::cuda_driver
-    )
-
-    if (TARGET Open3D::3rdparty_cub)
+    if (WITH_CUDA)
         target_link_libraries(open3d_paddle_ops PRIVATE
-            Open3D::3rdparty_cub
+            Open3D::3rdparty_cutlass
+            ${PADDLE_LIBRARIES}
+            CUDA::cuda_driver
         )
+        if (TARGET Open3D::3rdparty_cub)
+            target_link_libraries(open3d_paddle_ops PRIVATE
+                Open3D::3rdparty_cub
+            )
+        endif()
+    elseif(WITH_ROCM)
+        target_link_libraries(open3d_paddle_ops PRIVATE
+            Open3D::3rdparty_hipblas
+            ${PADDLE_LIBRARIES}
+            Open3D::3rdparty_gflags
+            Open3D::3rdparty_glog
+        )
+        if (TARGET Open3D::3rdparty_cub)
+            target_link_libraries(open3d_paddle_ops PRIVATE
+                Open3D::3rdparty_cub
+            )
+        endif()
     endif()
+    
 endif()
 
 install(TARGETS open3d_paddle_ops EXPORT Open3DPaddleOps

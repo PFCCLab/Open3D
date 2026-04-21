@@ -7,7 +7,9 @@
 
 #include "open3d/t/geometry/kernel/NPPImage.h"
 
+#if !__HIP_PLATFORM_AMD__
 #include <npp.h>
+#endif
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dtype.h"
@@ -21,7 +23,9 @@ namespace t {
 namespace geometry {
 namespace npp {
 
+#if !__HIP_PLATFORM_AMD__
 static NppStreamContext MakeNPPContext() {
+    utility::LogError("npp::MakeNPPContext() is not supported on ROCM GPUs.");
     NppStreamContext context;
     context.hStream = core::cuda::GetStream();
     context.nCudaDeviceId = core::cuda::GetDevice();
@@ -59,8 +63,12 @@ static NppStreamContext MakeNPPContext() {
 
     return context;
 }
+#endif  // !__HIP_PLATFORM_AMD__
 
 void RGBToGray(const core::Tensor &src_im, core::Tensor &dst_im) {
+#if __HIP_PLATFORM_AMD__
+    utility::LogError("npp::RGBToGray() is not supported on ROCM GPUs.");
+#else
     if (src_im.GetDevice() != dst_im.GetDevice()) {
         utility::LogError(
                 "src_im and dst_im are not on the same device, got {} and {}.",
@@ -92,11 +100,15 @@ void RGBToGray(const core::Tensor &src_im, core::Tensor &dst_im) {
                           dtype.ToString());
     }
 #undef NPP_ARGS
+#endif  // __HIP_PLATFORM_AMD__
 }
 
 void Resize(const open3d::core::Tensor &src_im,
             open3d::core::Tensor &dst_im,
             t::geometry::Image::InterpType interp_type) {
+#if __HIP_PLATFORM_AMD__
+    utility::LogError("npp::Resize() is not supported on ROCM GPUs.");
+#else
     if (src_im.GetDevice() != dst_im.GetDevice()) {
         utility::LogError(
                 "src_im and dst_im are not on the same device, got {} and {}.",
@@ -173,9 +185,13 @@ void Resize(const open3d::core::Tensor &src_im,
                           dtype.ToString());
     }
 #undef NPP_ARGS
+#endif  // __HIP_PLATFORM_AMD__
 }
 
 void Dilate(const core::Tensor &src_im, core::Tensor &dst_im, int kernel_size) {
+#if __HIP_PLATFORM_AMD__
+    utility::LogError("npp::Dilate() is not supported on ROCM GPUs.");
+#else
     if (src_im.GetDevice() != dst_im.GetDevice()) {
         utility::LogError(
                 "src_im and dst_im are not on the same device, got {} and {}.",
@@ -241,11 +257,15 @@ void Dilate(const core::Tensor &src_im, core::Tensor &dst_im, int kernel_size) {
                           dtype.ToString());
     }
 #undef NPP_ARGS
+#endif  // __HIP_PLATFORM_AMD__
 }
 
 void Filter(const open3d::core::Tensor &src_im,
             open3d::core::Tensor &dst_im,
             const open3d::core::Tensor &kernel) {
+#if __HIP_PLATFORM_AMD__
+    utility::LogError("npp::Filter() is not supported on ROCM GPUs.");
+#else
     if (src_im.GetDevice() != dst_im.GetDevice()) {
         utility::LogError(
                 "src_im and dst_im are not on the same device, got {} and {}.",
@@ -314,6 +334,7 @@ void Filter(const open3d::core::Tensor &src_im,
                           dtype.ToString());
     }
 #undef NPP_ARGS
+#endif  // __HIP_PLATFORM_AMD__
 }
 
 void FilterBilateral(const core::Tensor &src_im,
@@ -321,6 +342,9 @@ void FilterBilateral(const core::Tensor &src_im,
                      int kernel_size,
                      float value_sigma,
                      float distance_sigma) {
+#if __HIP_PLATFORM_AMD__
+    utility::LogError("npp::FilterBilateral() is not supported on ROCM GPUs.");
+#else
     if (src_im.GetDevice() != dst_im.GetDevice()) {
         utility::LogError(
                 "src_im and dst_im are not on the same device, got {} and {}.",
@@ -373,6 +397,7 @@ void FilterBilateral(const core::Tensor &src_im,
                           dtype.ToString());
     }
 #undef NPP_ARGS
+#endif  // __HIP_PLATFORM_AMD__
 }
 
 void FilterGaussian(const core::Tensor &src_im,
@@ -407,6 +432,9 @@ void FilterSobel(const core::Tensor &src_im,
                  core::Tensor &dst_im_dx,
                  core::Tensor &dst_im_dy,
                  int kernel_size) {
+#if __HIP_PLATFORM_AMD__
+    utility::LogError("npp::FilterSobel() is not supported on ROCM GPUs.");
+#else
     if (src_im.GetDevice() != dst_im_dx.GetDevice() ||
         src_im.GetDevice() != dst_im_dy.GetDevice()) {
         utility::LogError(
@@ -479,6 +507,7 @@ void FilterSobel(const core::Tensor &src_im,
     if (cuda_version < 10020) {
         dst_im_dx.Neg_();
     }
+#endif  // __HIP_PLATFORM_AMD__
 }
 }  // namespace npp
 }  // namespace geometry

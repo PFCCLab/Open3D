@@ -32,6 +32,18 @@ namespace ml {
 #define OPEN3D_ML_CUDA_DRIVER_CHECK(err) \
     __OPEN3D_ML_CUDA_DRIVER_CHECK(err, __FILE__, __LINE__)
 
+#if __HIP_PLATFORM_AMD__
+inline void __OPEN3D_ML_CUDA_DRIVER_CHECK(hipError_t err,
+                                          const char *file,
+                                          const int line,
+                                          bool abort = true) {
+    if (err != CUDA_SUCCESS) {
+        const char *error_string = hipGetErrorString(err);
+        utility::LogError("{}:{} CUDA driver error: {}", file, line,
+                          error_string);
+    }
+}
+#else
 inline void __OPEN3D_ML_CUDA_DRIVER_CHECK(CUresult err,
                                           const char *file,
                                           const int line,
@@ -48,6 +60,7 @@ inline void __OPEN3D_ML_CUDA_DRIVER_CHECK(CUresult err,
         }
     }
 }
+#endif
 
 inline cudaStream_t GetDefaultStream() { (cudaStream_t)0; }
 

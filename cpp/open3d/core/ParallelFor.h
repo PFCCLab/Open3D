@@ -16,17 +16,25 @@
 #include "open3d/utility/Parallel.h"
 #include "open3d/utility/Preprocessor.h"
 
-#ifdef __CUDACC__
+#if defined(__CUDACC__)
+
 #include <cuda.h>
 #include <cuda_runtime.h>
 
 #include "open3d/core/CUDAUtils.h"
+
+#elif defined(__HIPCC__)
+
+#include <hip/hip_runtime.h>
+
+#include "open3d/core/CUDAUtils.h"
+
 #endif
 
 namespace open3d {
 namespace core {
 
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(__HIPCC__)
 
 static constexpr int64_t OPEN3D_PARFOR_BLOCK = 128;
 static constexpr int64_t OPEN3D_PARFOR_THREAD = 4;
@@ -101,7 +109,7 @@ void ParallelForCPU_(const Device& device, int64_t n, const func_t& func) {
 /// kernel to be used on both CPU and CUDA, capture the variables by value.
 template <typename func_t>
 void ParallelFor(const Device& device, int64_t n, const func_t& func) {
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(__HIPCC__)
     ParallelForCUDA_(device, n, func);
 #else
     ParallelForCPU_(device, n, func);
@@ -161,7 +169,7 @@ void ParallelFor(const Device& device,
                  const vec_func_t& vec_func) {
 #ifdef BUILD_ISPC_MODULE
 
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(__HIPCC__)
     ParallelForCUDA_(device, n, func);
 #else
     int num_threads = utility::EstimateMaxThreads();
@@ -174,7 +182,7 @@ void ParallelFor(const Device& device,
 
 #else
 
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(__HIPCC__)
     ParallelForCUDA_(device, n, func);
 #else
     ParallelForCPU_(device, n, func);

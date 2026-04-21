@@ -12,7 +12,8 @@
 #include <string>
 
 // NVCC does not support deprecated attribute on Windows prior to v11.
-#if defined(__CUDACC__) && defined(_MSC_VER) && __CUDACC_VER_MAJOR__ < 11
+#if (defined(__CUDACC__) || defined(__HIPCC__)) && defined(_MSC_VER) && \
+        __CUDACC_VER_MAJOR__ < 11
 #ifndef FMT_DEPRECATED
 #define FMT_DEPRECATED
 #endif

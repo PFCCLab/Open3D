@@ -85,7 +85,8 @@ if (BUILD_CUDA_MODULE)
     target_sources(core PRIVATE
         MemoryManagerCUDA.cpp
     )
-    target_sources(core PRIVATE
+    
+    target_sources(core PRIVATE 
         hashmap/CUDA/CreateCUDAHashBackend.cu
         hashmap/CUDA/CUDAHashBackendBuffer.cu
         hashmap/CUDA/SlabNodeManager.cu
@@ -118,6 +119,23 @@ if (BUILD_ISPC_MODULE)
         kernel/BinaryEWCPU.ispc
         kernel/UnaryEWCPU.ispc
     )
+endif()
+
+if (WITH_ROCM)
+    include(Hipify)
+
+    get_target_property(SOURCE_LIST core SOURCES)
+    get_hipified_list("${SOURCE_LIST}" HIPIFIED_SOURCE_LIST)
+
+    foreach(src IN LISTS HIPIFIED_SOURCE_LIST)
+        get_filename_component(ext ${src} EXT)
+        if(ext STREQUAL ".cu")
+            set_source_files_properties(${src} PROPERTIES LANGUAGE HIP)
+        endif()
+    endforeach()
+
+    set_property(TARGET core PROPERTY SOURCES ${HIPIFIED_SOURCE_LIST})
+    get_target_property(SOURCE_LIST core SOURCES)
 endif()
 
 open3d_show_and_abort_on_warning(core)

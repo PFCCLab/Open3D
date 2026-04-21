@@ -24,6 +24,7 @@
 
 ## **Build and Install**
 
+### Build on CUDA
 ```bash
 # use gcc-9 and g++-9(important, or you may meet some problems when make install-pip-package)
 apt install gcc-9 g++-9
@@ -68,6 +69,56 @@ cmake  -DCMAKE_CUDA_HOST_COMPILER=/usr/bin/gcc-9 \
        -DBUILD_CUDA_MODULE=ON \
        -DBUILD_COMMON_CUDA_ARCHS=ON \
        -DBUILD_PADDLE_OPS=ON  \
+       -DGLIBCXX_USE_CXX11_ABI=ON \
+       -DBUNDLE_OPEN3D_ML=OFF \
+       -DPython_EXECUTABLE=$(which python) \
+       -DBUILD_GUI=OFF \
+       ..
+
+# install whl
+make install-pip-package -j8
+pip install ./lib/python_package/pip_package/open3d-*.whl
+```
+
+### Build on ROCm
+
+Verified on DTK 25.04: `harbor.sourcefind.cn:5443/dcu/admin/base/dtk:25.04.1-ubuntu22.04-py3.10`
+
+```bash
+# install dependencies
+cd Open3D
+bash util/install_deps_ubuntu.sh
+pip install wheel yapf==0.30.0
+
+# install paddlepaddle-gpu according to your device
+# https://www.paddlepaddle.org.cn/install/quick?docurl=/documentation/docs/zh/develop/install/pip/linux-pip.html
+python -m pip install paddlepaddle-dcu==3.3.0 -i https://www.paddlepaddle.org.cn/packages/stable/dcu/
+
+# configure
+mkdir build
+cd build
+
+# Build on develop
+# specify clang/clang++ in your environment, 14 recommended
+cmake  -DCMAKE_C_COMPILER=/usr/bin/clang \
+       -DCMAKE_CXX_COMPILER=/usr/bin/clang++ \
+       -DBUILD_CUDA_MODULE=ON \
+       -DWITH_ROCM=ON \
+       -DBUILD_PADDLE_OPS=ON \
+       -DGLIBCXX_USE_CXX11_ABI=ON \
+       -DBUNDLE_OPEN3D_ML=OFF \
+       -DPython_EXECUTABLE=$(which python) \
+       -DBUILD_GUI=OFF \
+       ..
+
+# or Build on release (support ROCm archs: gfx906, gfx926, gfx928 and gfx936.)
+# specify clang/clang++ in your environment, 14 recommended
+cmake  -DCMAKE_C_COMPILER=/usr/bin/clang \
+       -DCMAKE_CXX_COMPILER=/usr/bin/clang++ \
+       -DBUILD_CUDA_MODULE=ON \
+       -DBUILD_COMMON_CUDA_ARCHS=ON \
+       -DWITH_ROCM=ON \
+       -DBUILD_PADDLE_OPS=ON \
        -DGLIBCXX_USE_CXX11_ABI=ON \
        -DBUNDLE_OPEN3D_ML=OFF \
        -DPython_EXECUTABLE=$(which python) \

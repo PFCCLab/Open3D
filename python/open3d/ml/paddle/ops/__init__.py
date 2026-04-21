@@ -32,14 +32,25 @@ _lib_suffix = '_debug' if _build_config['CMAKE_BUILD_TYPE'] == 'Debug' else ''
 _lib_arch = ('cpu',)
 if _build_config["BUILD_CUDA_MODULE"] and _paddle.device.cuda.device_count(
 ) >= 1:
-    if _paddle.version.cuda() == _build_config["CUDA_VERSION"]:
-        _lib_arch = ('cuda', 'cpu')
+    if _build_config["WITH_ROCM"]:
+        if _paddle.is_compiled_with_rocm():
+            # NOTE(beinggod): Skip rocm version check.
+            _lib_arch = ('cuda', 'cpu')
+        else:
+            print("Warning: Open3D was built with ROCm but "
+                  "Paddle was not built with ROCm. Falling back to CPU for now."
+                  "Otherwise, install Paddle with ROCm{}.")
     else:
-        print("Warning: Open3D was built with CUDA {} but"
-              "Paddle was built with CUDA {}. Falling back to CPU for now."
-              "Otherwise, install Paddle with CUDA {}.".format(
-                  _build_config["CUDA_VERSION"], _paddle.version.cuda(),
-                  _build_config["CUDA_VERSION"]))
+        # CUDA
+        if _paddle.version.cuda() == _build_config["CUDA_VERSION"]:
+            _lib_arch = ('cuda', 'cpu')
+        else:
+            print("Warning: Open3D was built with CUDA {} but "
+                  "Paddle was built with CUDA {}. Falling back to CPU for now."
+                  "Otherwise, install Paddle with CUDA {}.".format(
+                      _build_config["CUDA_VERSION"], _paddle.version.cuda(),
+                      _build_config["CUDA_VERSION"]))
+
 _lib_path.extend([
     _os.path.join(_package_root, la,
                   'open3d_paddle_ops' + _lib_suffix + _lib_ext)
